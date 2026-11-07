@@ -83,6 +83,48 @@ void main() {
     });
   });
 
+  group('feedback preferences', () {
+    test('haptics and sound effects start on', () async {
+      final prefs = await env.settings.getFeedbackPrefs();
+      expect(prefs.haptics, isTrue);
+      expect(prefs.sounds, isTrue);
+    });
+
+    test('each one is saved on its own', () async {
+      await env.settings.setHapticsEnabled(false);
+      var prefs = await env.settings.getFeedbackPrefs();
+      expect((prefs.haptics, prefs.sounds), (false, true));
+
+      await env.settings.setSoundEffectsEnabled(false);
+      await env.settings.setHapticsEnabled(true);
+      prefs = await env.settings.getFeedbackPrefs();
+      expect((prefs.haptics, prefs.sounds), (true, false));
+    });
+
+    test('they are separate from the reminder sound and vibration', () async {
+      await env.settings.setHapticsEnabled(false);
+      await env.settings.setSoundEffectsEnabled(false);
+
+      final reminders = await env.settings.getNotificationPrefs();
+      expect(reminders.soundEnabled, isTrue);
+      expect(reminders.vibrationEnabled, isTrue);
+    });
+
+    test('the live stream follows changes', () async {
+      final seen = <(bool, bool)>[];
+      final sub = env.settings.watchFeedbackPrefs().listen(
+        (p) => seen.add((p.haptics, p.sounds)),
+      );
+      addTearDown(sub.cancel);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await env.settings.setHapticsEnabled(false);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(seen.first, (true, true));
+      expect(seen.last, (false, true));
+    });
+  });
+
   group('theme mode', () {
     test('follows the system until the user chooses', () async {
       expect(await env.settings.getThemeMode(), ThemeMode.system);

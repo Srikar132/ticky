@@ -221,6 +221,7 @@ class _TaskCheckState extends State<TaskCheck> {
       label: completed ? 'Completed, tap to undo' : 'Mark as done',
       excludeSemantics: true,
       child: InkResponse(
+        enableFeedback: false,
         onTap: widget.onTap,
         radius: 28,
         child: SizedBox(

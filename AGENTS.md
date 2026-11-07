@@ -77,6 +77,7 @@ Cute and calm, not dense: soft lavender page, white rounded cards, big pastel ti
 - **Shapes:** cards radius 24, tiles and sheets 24 to 32, buttons and chips fully round. No hairline boxes; grouping is a white card on the lavender page.
 - **Navigation:** a floating bottom bar (Home, add task, Settings) in `lib/app_shell.dart`. Detail and form screens are pushed over it. `AppRoutes.openSettings` switches the tab.
 - **Celebrations:** a small confetti pop on the check circle when a task is completed. Finishing the last task plays a full-screen burst and a congratulations sheet with a random line from `lib/features/celebration/data/celebration_quotes.dart`. Both respect the system "reduce motion" setting. There is no toast for a normal completion.
+- **Feedback:** `AppFeedback` (`lib/core/feedback`) wraps Flutter's built-in `HapticFeedback` and `SystemSound.click`: `tap()` for taps, `success()` for completed actions, `celebrate()` for a finished day. Settings > Feedback has two switches (`hapticsEnabled`, `soundEffectsEnabled`, both default on), separate from the reminder sound and vibration. No audio package or sound files. Widgets that call `AppFeedback` set `enableFeedback: false` on their own `InkWell` so the system click does not play twice. Standard Material buttons keep Flutter's default feedback, which follows the phone's own touch-sound setting.
 - Prefer Flutter built-ins (`ThemeMode`, `ColorScheme`, `ThemeExtension`) over custom replacements.
 
 The main screens are:
@@ -342,7 +343,7 @@ Constraints: `UNIQUE(routineTaskId, dateKey)`. Indexes on `(dateKey)` and `(date
 
 **unlocked_items**: `itemKey` (PK), `unlockedAt`. The item catalog (name, price, asset) lives in code, not in the database.
 
-**app_settings**: `key` (PK), `value` (text). Keys include `themeMode`, `notificationsEnabled`, `soundEnabled`, `vibrationEnabled`, `followUpEnabled`, `defaultSnoozeMinutes`, `equippedMascotItem`, `lastReconciledDateKey`, `bestStreak`. Access only through a typed settings wrapper.
+**app_settings**: `key` (PK), `value` (text). Keys include `themeMode`, `notificationsEnabled`, `soundEnabled`, `vibrationEnabled`, `followUpEnabled`, `defaultSnoozeMinutes`, `hapticsEnabled`, `soundEffectsEnabled`, `equippedMascotItem`, `lastReconciledDateKey`, `bestStreak`. Access only through a typed settings wrapper.
 
 ## 8.3 Derived data (never stored in its own table)
 

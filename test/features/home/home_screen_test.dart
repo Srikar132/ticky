@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ticky/app.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
 import 'package:ticky/features/celebration/data/celebration_quotes.dart';
@@ -13,8 +14,10 @@ import 'package:ticky/features/home/widgets/task_tile.dart';
 import 'package:ticky/features/tasks/screens/task_details_screen.dart';
 import 'package:ticky/features/home/providers/notification_prompt_controller.dart';
 import 'package:ticky/features/routine/models/streak.dart';
+import 'package:ticky/features/settings/models/feedback_prefs.dart';
 import 'package:ticky/features/tasks/models/task_suggestion.dart';
 
+import '../../support/feedback_log.dart';
 import '../../support/home_test_support.dart';
 
 Future<void> pumpHome(WidgetTester tester, List<Override> overrides) async {
@@ -379,6 +382,83 @@ void main() {
       await tester.pump();
 
       expect(find.text('Past days are read-only'), findsOneWidget);
+    });
+  });
+
+  group('feedback', () {
+    final tasks = [
+      entry(id: 1, title: 'Drink water', minutes: 8 * 60),
+      entry(id: 2, title: 'Stretch', minutes: 10 * 60),
+    ];
+
+    testWidgets('completing a task buzzes and clicks once', (tester) async {
+      final log = FeedbackLog(tester);
+      await pumpHome(tester, homeOverrides(entries: tasks));
+
+      await tester.tap(find.byType(TaskCheck).first);
+      await tester.pumpAndSettle();
+
+      expect(log.haptics, ['haptic:HapticFeedbackType.mediumImpact']);
+      expect(log.sounds, ['sound:SystemSoundType.click'], reason: 'no double');
+      await letReactionsFade(tester);
+    });
+
+    testWidgets('finishing the day celebrates with a double buzz', (
+      tester,
+    ) async {
+      final log = FeedbackLog(tester);
+      await pumpHome(
+        tester,
+        homeOverrides(
+          entries: [
+            entry(id: 1, title: 'Only one', minutes: 10 * 60),
+            entry(id: 2, title: 'Done', status: TaskStatus.completed),
+          ],
+        ),
+      );
+
+      await tester.tap(find.byType(TaskCheck).first);
+      await tester.pumpAndSettle();
+
+      expect(log.haptics, [
+        'haptic:HapticFeedbackType.heavyImpact',
+        'haptic:HapticFeedbackType.mediumImpact',
+      ]);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await letReactionsFade(tester);
+    });
+
+    testWidgets('with both switches off the app stays quiet', (tester) async {
+      final log = FeedbackLog(tester);
+      await pumpHome(
+        tester,
+        homeOverrides(
+          entries: tasks,
+          feedbackPrefs: const FeedbackPrefs(haptics: false, sounds: false),
+        ),
+      );
+
+      await tester.tap(find.byType(TaskCheck).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+
+      expect(log.calls, isEmpty);
+      await letReactionsFade(tester);
+    });
+
+    testWidgets('the app root applies the saved switches', (tester) async {
+      FeedbackLog(tester);
+      await pumpHome(
+        tester,
+        homeOverrides(
+          feedbackPrefs: const FeedbackPrefs(haptics: false, sounds: true),
+        ),
+      );
+
+      expect(AppFeedback.hapticsEnabled, isFalse);
+      expect(AppFeedback.soundsEnabled, isTrue);
     });
   });
 

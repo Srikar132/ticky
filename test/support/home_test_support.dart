@@ -21,6 +21,7 @@ import 'package:ticky/features/routine/data/history_repository.dart';
 import 'package:ticky/features/routine/providers/history_providers.dart';
 import 'package:ticky/features/routine/models/streak.dart';
 import 'package:ticky/features/settings/data/settings_repository.dart';
+import 'package:ticky/features/settings/models/feedback_prefs.dart';
 import 'package:ticky/features/settings/models/notification_prefs.dart';
 import 'package:ticky/features/settings/providers/settings_providers.dart';
 import 'package:ticky/features/tasks/data/daily_record_repository.dart';
@@ -222,6 +223,14 @@ class FakeSettingsActions implements SettingsActions {
   @override
   Future<void> setDefaultSnoozeMinutes(int minutes) async =>
       calls.add('snooze:$minutes');
+
+  @override
+  Future<void> setHapticsEnabled(bool enabled) async =>
+      calls.add('haptics:$enabled');
+
+  @override
+  Future<void> setSoundEffectsEnabled(bool enabled) async =>
+      calls.add('soundEffects:$enabled');
 }
 
 /// Starts on a fixed theme and records choices instead of saving them.
@@ -372,6 +381,7 @@ List<Override> homeOverrides({
   FakeCategoryRepository? categoryRepository,
   ThemeMode themeMode = ThemeMode.light,
   FakeThemeModeController? themeController,
+  FeedbackPrefs feedbackPrefs = const FeedbackPrefs(),
 }) {
   final time = now ?? DateTime(2026, 11, 2, 9);
   final fakeRoutines = routines ?? FakeRoutineRepository();
@@ -379,6 +389,7 @@ List<Override> homeOverrides({
     themeModeProvider.overrideWith(
       () => themeController ?? FakeThemeModeController(themeMode),
     ),
+    feedbackPrefsProvider.overrideWith((ref) => Stream.value(feedbackPrefs)),
     notificationPrefsProvider.overrideWith((ref) => Stream.value(prefs)),
     notificationPermissionProvider.overrideWith(
       (ref) async => NotificationPermissionStatus(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 
 /// One choice in [PillSegments].
@@ -44,7 +44,7 @@ class PillSegments<T> extends StatelessWidget {
                   icon: option.icon,
                   selected: option.value == selected,
                   onTap: () {
-                    HapticFeedback.selectionClick();
+                    AppFeedback.tap();
                     onChanged(option.value);
                   },
                 ),

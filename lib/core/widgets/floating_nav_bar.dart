@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 
 /// One tab in the [FloatingNavBar].
@@ -122,7 +122,7 @@ class _NavTab extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () {
-            HapticFeedback.selectionClick();
+            AppFeedback.tap();
             onTap();
           },
           child: AnimatedContainer(
@@ -172,8 +172,9 @@ class _AddButton extends StatelessWidget {
           shape: const CircleBorder(),
           child: InkWell(
             customBorder: const CircleBorder(),
+            enableFeedback: false,
             onTap: () {
-              HapticFeedback.selectionClick();
+              AppFeedback.tap();
               onTap();
             },
             child: SizedBox(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/core/database/app_database.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
 import 'package:ticky/core/database/enums.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/utils/clock.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
@@ -214,10 +214,10 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
       case TaskSaveResult.invalid:
         _revealFirstError();
       case TaskSaveResult.saved:
-        HapticFeedback.selectionClick();
+        AppFeedback.tap();
         Navigator.of(context).pop();
       case TaskSaveResult.savedNeedsPermission:
-        HapticFeedback.selectionClick();
+        AppFeedback.tap();
         // The task is saved already; this only offers working reminders.
         await showNotificationPermissionSheet(context, ref);
         if (mounted) Navigator.of(context).pop();
