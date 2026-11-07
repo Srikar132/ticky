@@ -12,6 +12,7 @@ import 'package:ticky/core/widgets/pill_segments.dart';
 import 'package:ticky/features/categories/widgets/create_category_sheet.dart';
 import 'package:ticky/features/character/widgets/ticky_mascot.dart';
 import 'package:ticky/features/routine/data/history_repository.dart';
+import 'package:ticky/features/settings/models/feedback_prefs.dart';
 import 'package:ticky/features/settings/models/notification_prefs.dart';
 import 'package:ticky/features/settings/screens/settings_screen.dart';
 import 'package:ticky/features/tasks/screens/add_edit_task_screen.dart';
@@ -92,6 +93,50 @@ void main() {
             .selected,
         ThemeMode.system,
       );
+    });
+  });
+
+  group('feedback', () {
+    Switch switchFor(WidgetTester tester, String label) {
+      return tester.widget<Switch>(
+        find.descendant(
+          of: find.ancestor(
+            of: find.text(label),
+            matching: find.byType(InkWell),
+          ),
+          matching: find.byType(Switch),
+        ),
+      );
+    }
+
+    testWidgets('shows both switches on by default', (tester) async {
+      await openSettings(tester, homeOverrides());
+
+      expect(find.text('Feedback'), findsOneWidget);
+      expect(switchFor(tester, 'Haptics').value, isTrue);
+      expect(switchFor(tester, 'Sound effects').value, isTrue);
+    });
+
+    testWidgets('reflects what is saved', (tester) async {
+      await openSettings(
+        tester,
+        homeOverrides(feedbackPrefs: const FeedbackPrefs(sounds: false)),
+      );
+
+      expect(switchFor(tester, 'Haptics').value, isTrue);
+      expect(switchFor(tester, 'Sound effects').value, isFalse);
+    });
+
+    testWidgets('each switch is saved', (tester) async {
+      final actions = FakeSettingsActions();
+      await openSettings(tester, homeOverrides(settingsActions: actions));
+
+      await tester.tap(find.text('Haptics'));
+      await tester.pump();
+      await tester.tap(find.text('Sound effects'));
+      await tester.pump();
+
+      expect(actions.calls, ['haptics:false', 'soundEffects:false']);
     });
   });
 

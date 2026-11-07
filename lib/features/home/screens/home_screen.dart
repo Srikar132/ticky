@@ -1,12 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/app_router.dart';
 import 'package:ticky/core/database/app_database.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
 import 'package:ticky/core/database/enums.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/notifications/notification_providers.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/utils/clock.dart';
@@ -115,7 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (entry.record.status == TaskStatus.completed) {
       if (await _attempt(() => actions.reopen(id))) {
-        HapticFeedback.selectionClick();
+        AppFeedback.tap();
       }
       return;
     }
@@ -123,12 +123,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final finishesDay =
         entry.record.status == TaskStatus.pending && progress.remaining == 1;
     if (!await _attempt(() => actions.complete(id)) || !mounted) return;
-    HapticFeedback.mediumImpact();
     final coins = coinsForPriority(entry.priority);
 
     if (finishesDay) {
       // The big moment: a full-screen burst, then a congratulations sheet.
       _react(MascotMood.celebrating, hold: const Duration(seconds: 5));
+      unawaited(AppFeedback.celebrate());
       playConfetti(context, style: ConfettiStyle.party);
       await Future<void>.delayed(const Duration(milliseconds: 900));
       if (!mounted) return;
@@ -136,6 +136,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
 
+    AppFeedback.success();
     _react(MascotMood.excited);
   }
 
@@ -148,7 +149,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
     if (!await _attempt(() => actions.skip(id))) return;
-    HapticFeedback.selectionClick();
+    AppFeedback.tap();
     _showMessage(
       'Skipped for today',
       onUndo: () => _attempt(() => actions.reopen(id)),
@@ -159,7 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final actions = ref.read(taskActionsProvider);
     try {
       final until = await actions.snooze(entry.record.id);
-      HapticFeedback.selectionClick();
+      AppFeedback.tap();
       if (mounted) {
         _showMessage(
           'Snoozed until ${formatMinutesOfDay(minutesOfDay(until))}',
@@ -174,7 +175,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     DailyTaskEntry entry,
     DailyProgress progress,
   ) async {
-    HapticFeedback.selectionClick();
+    AppFeedback.tap();
     final action = await showTaskActionsSheet(context, entry);
     if (action == null || !mounted) return;
     switch (action) {

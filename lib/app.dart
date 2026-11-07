@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/app_navigation.dart';
 import 'package:ticky/app_router.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_theme.dart';
 import 'package:ticky/features/settings/providers/settings_providers.dart';
 
@@ -13,6 +14,11 @@ class TickyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final navigation = ref.watch(appNavigationProvider);
+    // Keeps the haptic and click switches in step with Settings.
+    final feedback = ref.watch(feedbackPrefsProvider).value;
+    if (feedback != null) {
+      AppFeedback.configure(haptics: feedback.haptics, sounds: feedback.sounds);
+    }
     return MaterialApp(
       title: 'Ticky',
       debugShowCheckedModeBanner: false,

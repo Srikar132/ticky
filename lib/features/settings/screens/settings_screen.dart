@@ -5,6 +5,7 @@ import 'package:ticky/core/widgets/floating_nav_bar.dart';
 import 'package:ticky/features/settings/providers/settings_providers.dart';
 import 'package:ticky/features/settings/widgets/appearance_section.dart';
 import 'package:ticky/features/settings/widgets/categories_section.dart';
+import 'package:ticky/features/settings/widgets/feedback_section.dart';
 import 'package:ticky/features/settings/widgets/history_section.dart';
 import 'package:ticky/features/settings/widgets/notifications_section.dart';
 import 'package:ticky/features/settings/widgets/routines_section.dart';
@@ -57,6 +58,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ),
         children: [
           const AppearanceSection(),
+          const FeedbackSection(),
           const NotificationsSection(),
           const RoutinesSection(),
           const CategoriesSection(),

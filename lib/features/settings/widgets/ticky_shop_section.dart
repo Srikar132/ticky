@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/theme/ticky_colors.dart';
 import 'package:ticky/core/widgets/form_card.dart';
@@ -43,7 +43,7 @@ class _TickyShopSectionState extends ConsumerState<TickyShopSection> {
     }
     try {
       await ref.read(shopActionsProvider).buy(item);
-      HapticFeedback.mediumImpact();
+      AppFeedback.success();
       if (!mounted) return;
       setState(() => _picked = false);
       _say('Ticky is now ${item.name}');
@@ -55,7 +55,7 @@ class _TickyShopSectionState extends ConsumerState<TickyShopSection> {
   Future<void> _wear(String? key) async {
     try {
       await ref.read(shopActionsProvider).equip(key);
-      HapticFeedback.selectionClick();
+      AppFeedback.tap();
       if (mounted) setState(() => _picked = false);
     } on DataException catch (error) {
       if (mounted) _say(error.message);

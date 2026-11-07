@@ -9,6 +9,7 @@ import 'package:ticky/features/rewards/data/reward_repository.dart';
 import 'package:ticky/features/rewards/models/shop_item.dart';
 import 'package:ticky/features/rewards/providers/reward_providers.dart';
 import 'package:ticky/features/settings/data/settings_repository.dart';
+import 'package:ticky/features/settings/models/feedback_prefs.dart';
 import 'package:ticky/features/settings/models/notification_prefs.dart';
 
 final settingsRepositoryProvider = Provider<SettingsRepository>(
@@ -18,6 +19,11 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 /// Notification, sound, vibration and snooze preferences, live.
 final notificationPrefsProvider = StreamProvider<NotificationPrefs>(
   (ref) => ref.watch(settingsRepositoryProvider).watchNotificationPrefs(),
+);
+
+/// Ticky's own haptics and sound effects, live.
+final feedbackPrefsProvider = StreamProvider<FeedbackPrefs>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchFeedbackPrefs(),
 );
 
 /// The theme choice: follow the system (the default), light or dark.
@@ -151,6 +157,12 @@ class SettingsActions {
 
   Future<void> setDefaultSnoozeMinutes(int minutes) =>
       _settings.setDefaultSnoozeMinutes(minutes);
+
+  Future<void> setHapticsEnabled(bool enabled) =>
+      _settings.setHapticsEnabled(enabled);
+
+  Future<void> setSoundEffectsEnabled(bool enabled) =>
+      _settings.setSoundEffectsEnabled(enabled);
 }
 
 final settingsActionsProvider = Provider<SettingsActions>(

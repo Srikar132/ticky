@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/app_router.dart';
 import 'package:ticky/core/database/app_database.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
 import 'package:ticky/core/database/enums.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/theme/ticky_colors.dart';
 import 'package:ticky/core/widgets/form_card.dart';
@@ -69,7 +69,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     final actions = ref.read(taskActionsProvider);
     final id = details.record.id;
     if (!await _attempt(() => actions.complete(id))) return;
-    HapticFeedback.mediumImpact();
+    AppFeedback.success();
     final coins = coinsForPriority(
       details.routine?.priority ?? Priority.medium,
     );
@@ -85,7 +85,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     final actions = ref.read(taskActionsProvider);
     final id = details.record.id;
     if (!await _attempt(() => actions.skip(id))) return;
-    HapticFeedback.selectionClick();
+    AppFeedback.tap();
     if (mounted) {
       _say(
         'Skipped for today',
@@ -98,7 +98,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     if (await _attempt(
       () => ref.read(taskActionsProvider).reopen(details.record.id),
     )) {
-      HapticFeedback.selectionClick();
+      AppFeedback.tap();
     }
   }
 
@@ -107,7 +107,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       final until = await ref
           .read(taskActionsProvider)
           .snooze(details.record.id);
-      HapticFeedback.selectionClick();
+      AppFeedback.tap();
       if (mounted) {
         _say('Snoozed until ${formatMinutesOfDay(minutesOfDay(until))}');
       }
@@ -141,7 +141,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       }
       return;
     }
-    HapticFeedback.mediumImpact();
+    AppFeedback.success();
     navigator.pop();
     messenger
       ..hideCurrentSnackBar()

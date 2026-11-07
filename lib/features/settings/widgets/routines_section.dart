@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/app_router.dart';
 import 'package:ticky/core/database/app_database.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
 import 'package:ticky/core/widgets/form_card.dart';
@@ -54,7 +54,7 @@ class RoutinesSection extends ConsumerWidget {
 
     Future<void> delete(RoutineTask routine) async {
       if (!await attempt(() => actions.delete(routine.id))) return;
-      HapticFeedback.mediumImpact();
+      AppFeedback.success();
       say(
         '"${routine.title}" deleted',
         onUndo: () => attempt(() => actions.undoDelete(routine.id)),

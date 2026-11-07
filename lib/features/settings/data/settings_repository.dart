@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:ticky/core/database/app_database.dart';
+import 'package:ticky/features/settings/models/feedback_prefs.dart';
 import 'package:ticky/features/settings/models/notification_prefs.dart';
 
 /// Typed access to `app_settings`. Add one getter/setter pair per key.
@@ -17,6 +18,8 @@ class SettingsRepository {
   static const _notificationPromptDismissedAt = 'notificationPromptDismissedAt';
   static const _equippedMascotItem = 'equippedMascotItem';
   static const _themeMode = 'themeMode';
+  static const _hapticsEnabled = 'hapticsEnabled';
+  static const _soundEffectsEnabled = 'soundEffectsEnabled';
 
   /// Local date (`yyyy-MM-dd`) of the last completed daily reconcile.
   Future<String?> getLastReconciledDateKey() => _read(_lastReconciledDateKey);
@@ -101,6 +104,31 @@ class SettingsRepository {
       await _write(_equippedMascotItem, itemKey);
     }
   }
+
+  /// Ticky's own haptics and sound effects. Both default to on.
+  Future<FeedbackPrefs> getFeedbackPrefs() async {
+    final rows = await _db.select(_db.appSettings).get();
+    return _feedbackFrom({for (final row in rows) row.key: row.value});
+  }
+
+  Stream<FeedbackPrefs> watchFeedbackPrefs() {
+    return _db
+        .select(_db.appSettings)
+        .watch()
+        .map((rows) => _feedbackFrom({for (final r in rows) r.key: r.value}))
+        .distinct();
+  }
+
+  FeedbackPrefs _feedbackFrom(Map<String, String> values) => FeedbackPrefs(
+    haptics: values[_hapticsEnabled] != 'false',
+    sounds: values[_soundEffectsEnabled] != 'false',
+  );
+
+  Future<void> setHapticsEnabled(bool value) =>
+      _write(_hapticsEnabled, '$value');
+
+  Future<void> setSoundEffectsEnabled(bool value) =>
+      _write(_soundEffectsEnabled, '$value');
 
   /// How the app picks its theme. Defaults to following the system.
   Future<ThemeMode> getThemeMode() async =>

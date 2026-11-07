@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:ticky/core/feedback/app_feedback.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 
 /// Ticky's main call-to-action: a solid near-black pill with white text and a
@@ -95,11 +95,12 @@ class _PrimaryActionButtonState extends State<PrimaryActionButton> {
             type: MaterialType.transparency,
             child: InkWell(
               borderRadius: radius,
+              enableFeedback: false,
               splashColor: onInk.withValues(alpha: 0.12),
               highlightColor: Colors.transparent,
               onHighlightChanged: _setPressed,
               onTap: () {
-                HapticFeedback.selectionClick();
+                AppFeedback.tap();
                 widget.onPressed();
               },
               child: SizedBox(
