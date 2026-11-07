@@ -8,6 +8,7 @@ import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/core/theme/app_theme.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
 import 'package:ticky/core/widgets/form_card.dart';
+import 'package:ticky/core/widgets/pill_segments.dart';
 import 'package:ticky/features/categories/widgets/create_category_sheet.dart';
 import 'package:ticky/features/character/widgets/ticky_mascot.dart';
 import 'package:ticky/features/routine/data/history_repository.dart';
@@ -26,7 +27,7 @@ Future<void> openSettings(WidgetTester tester, List<Override> overrides) async {
     ProviderScope(
       overrides: overrides,
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: AppTheme.light,
         onGenerateRoute: AppRouter.onGenerateRoute,
         home: const SettingsScreen(),
       ),
@@ -53,6 +54,47 @@ DaySummary day(
 );
 
 void main() {
+  group('appearance', () {
+    testWidgets('offers system, light and dark, with the current one chosen', (
+      tester,
+    ) async {
+      await openSettings(tester, homeOverrides(themeMode: ThemeMode.dark));
+
+      expect(find.text('Appearance'), findsOneWidget);
+      for (final label in ['System', 'Light', 'Dark']) {
+        expect(find.text(label), findsOneWidget);
+      }
+      expect(
+        tester
+            .widget<PillSegments<ThemeMode>>(
+              find.byType(PillSegments<ThemeMode>),
+            )
+            .selected,
+        ThemeMode.dark,
+      );
+    });
+
+    testWidgets('tapping a choice selects it', (tester) async {
+      final controller = FakeThemeModeController(ThemeMode.light);
+      await openSettings(tester, homeOverrides(themeController: controller));
+
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('System'));
+      await tester.pumpAndSettle();
+
+      expect(controller.selected, [ThemeMode.dark, ThemeMode.system]);
+      expect(
+        tester
+            .widget<PillSegments<ThemeMode>>(
+              find.byType(PillSegments<ThemeMode>),
+            )
+            .selected,
+        ThemeMode.system,
+      );
+    });
+  });
+
   group('notifications', () {
     testWidgets('show the saved preferences', (tester) async {
       await openSettings(

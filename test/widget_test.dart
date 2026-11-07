@@ -22,36 +22,44 @@ Future<void> pumpApp(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('opens on Home with the dark brand background', (tester) async {
+  testWidgets('opens on Home with the lavender page', (tester) async {
     await pumpApp(tester);
 
     expect(find.text('Good morning'), findsOneWidget);
     expect(
-      Theme.of(tester.element(find.byType(Scaffold))).scaffoldBackgroundColor,
-      AppColors.deepBackground,
+      Theme.of(
+        tester.element(find.byType(Scaffold).first),
+      ).scaffoldBackgroundColor,
+      AppColors.canvas,
     );
     expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).title, 'Ticky');
   });
 
-  testWidgets('Home opens Settings and Add task, and goes back', (
-    tester,
-  ) async {
+  testWidgets('the bottom bar switches tabs and adds a task', (tester) async {
     await pumpApp(tester);
 
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
-    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Appearance'), findsOneWidget, reason: 'Settings tab');
+    expect(find.text('Good morning'), findsNothing, reason: 'Home is hidden');
 
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Home'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Add task'));
+    expect(find.text('Good morning'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('New task'));
     await tester.pumpAndSettle();
     expect(find.text('New task'), findsOneWidget);
+    expect(
+      find.byTooltip('Home'),
+      findsNothing,
+      reason: 'the form covers the bottom bar',
+    );
   });
 
   testWidgets('typed routes pass their arguments', (tester) async {
     await pumpApp(tester);
-    final context = tester.element(find.byType(Scaffold));
+    final context = tester.element(find.byType(Scaffold).first);
 
     AppRoutes.openEditTask(context, 7);
     await tester.pumpAndSettle();
@@ -74,5 +82,63 @@ void main() {
 
     expect(find.byType(TaskDetailsScreen), findsNothing);
     expect(find.text('Good morning'), findsWidgets);
+  });
+
+  group('theme', () {
+    Future<void> pumpWith(WidgetTester tester, ThemeMode mode) async {
+      usePhoneScreen(tester);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: homeOverrides(themeMode: mode),
+          child: const TickyApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Brightness shown(WidgetTester tester) =>
+        Theme.of(tester.element(find.byType(Scaffold).first)).brightness;
+
+    testWidgets('light and dark follow the saved choice at once', (
+      tester,
+    ) async {
+      await pumpWith(tester, ThemeMode.dark);
+      expect(shown(tester), Brightness.dark);
+      expect(
+        Theme.of(
+          tester.element(find.byType(Scaffold).first),
+        ).scaffoldBackgroundColor,
+        AppDarkColors.canvas,
+      );
+    });
+
+    testWidgets('System follows the phone', (tester) async {
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      await pumpWith(tester, ThemeMode.system);
+      expect(shown(tester), Brightness.dark);
+
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+      await tester.pumpAndSettle();
+      expect(shown(tester), Brightness.light);
+    });
+
+    testWidgets('choosing in Settings changes the whole app straight away', (
+      tester,
+    ) async {
+      await pumpWith(tester, ThemeMode.light);
+      expect(shown(tester), Brightness.light);
+
+      await tester.tap(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dark'));
+      await tester.pumpAndSettle();
+
+      expect(shown(tester), Brightness.dark);
+      expect(
+        tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+        ThemeMode.dark,
+      );
+    });
   });
 }

@@ -6,11 +6,14 @@ import 'package:ticky/app.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
 import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
+import 'package:ticky/features/celebration/data/celebration_quotes.dart';
+import 'package:ticky/features/celebration/widgets/confetti.dart';
 import 'package:ticky/features/character/widgets/ticky_mascot.dart';
 import 'package:ticky/features/home/widgets/task_tile.dart';
 import 'package:ticky/features/tasks/screens/task_details_screen.dart';
 import 'package:ticky/features/home/providers/notification_prompt_controller.dart';
 import 'package:ticky/features/routine/models/streak.dart';
+import 'package:ticky/features/tasks/models/task_suggestion.dart';
 
 import '../../support/home_test_support.dart';
 
@@ -32,24 +35,20 @@ Future<void> letReactionsFade(WidgetTester tester) =>
 
 void main() {
   group('empty states', () {
-    testWidgets('new user: example day, one clear action, suggestions', (
+    testWidgets('new user: headline, one clear action, suggestion tiles', (
       tester,
     ) async {
       await pumpHome(tester, homeOverrides(hasRoutines: false));
 
-      expect(find.text('Build your day'), findsOneWidget);
-      expect(find.text('Morning walk'), findsOneWidget, reason: 'example row');
+      expect(find.text('Let\u2019s build your day.'), findsOneWidget);
       expect(find.text('Create your first routine'), findsOneWidget);
-      expect(find.byType(ActionChip), findsNWidgets(4));
-      expect(
-        find.text('New task'),
-        findsNothing,
-        reason: 'no button when empty',
-      );
+      for (final suggestion in taskSuggestions) {
+        expect(find.text(suggestion.title), findsOneWidget);
+      }
       expect(
         find.byType(TickyMascot),
         findsOneWidget,
-        reason: 'only the header Ticky, never a second one',
+        reason: 'only the hero Ticky, never a second one',
       );
     });
 
@@ -72,7 +71,7 @@ void main() {
     ) async {
       await pumpHome(tester, homeOverrides(hasRoutines: false));
 
-      await tester.tap(find.widgetWithText(ActionChip, 'Read 10 minutes'));
+      await tester.tap(find.text('Read 10 minutes'));
       await tester.pumpAndSettle();
 
       expect(find.text('New task'), findsOneWidget);
@@ -87,7 +86,7 @@ void main() {
 
       expect(find.text('Nothing planned today'), findsOneWidget);
       expect(find.text('Add a task'), findsOneWidget);
-      expect(find.byType(ActionChip), findsNothing);
+      expect(find.text('Or start with one of these'), findsNothing);
       expect(find.byType(TickyMascot), findsOneWidget);
     });
   });
@@ -181,9 +180,13 @@ void main() {
       expect(find.text('Evening'), findsOneWidget);
       expect(find.text('Anytime'), findsOneWidget);
       expect(find.text('Drink water'), findsOneWidget);
-      expect(find.text('1 of 4 done'), findsOneWidget);
-      expect(find.text('3 tasks to go'), findsOneWidget);
-      expect(find.text('New task'), findsOneWidget, reason: 'FAB present');
+      expect(find.text('of 4 done'), findsOneWidget);
+      expect(find.text('Keep it going.'), findsOneWidget);
+      expect(
+        find.byTooltip('New task'),
+        findsOneWidget,
+        reason: 'bottom bar add button',
+      );
     });
 
     testWidgets('flags overdue tasks, not upcoming ones', (tester) async {
@@ -204,23 +207,15 @@ void main() {
       expect(find.text('+2'), findsWidgets, reason: 'medium priority');
     });
 
-    testWidgets('tapping the circle completes, and Undo reopens', (
-      tester,
-    ) async {
+    testWidgets('tapping the circle completes, quietly', (tester) async {
       final actions = FakeTaskActions();
       await pumpHome(tester, homeOverrides(entries: entries, actions: actions));
 
       await tester.tap(find.byType(TaskCheck).first);
       await tester.pump();
       expect(actions.calls, ['complete:1']);
-      expect(find.text('Nice! +2 coins'), findsOneWidget);
-
-      await tester.pump(
-        const Duration(milliseconds: 500),
-      ); // snackbar slides in
-      await tester.tap(find.text('Undo'));
-      await tester.pump();
-      expect(actions.calls, ['complete:1', 'reopen:1']);
+      expect(find.byType(SnackBar), findsNothing, reason: 'no toast');
+      expect(find.textContaining('Nice!'), findsNothing);
       await letReactionsFade(tester);
     });
 
@@ -234,7 +229,7 @@ void main() {
       expect(actions.calls, ['reopen:4']);
     });
 
-    testWidgets('finishing the last task celebrates the perfect day', (
+    testWidgets('finishing the last task celebrates with a congrats sheet', (
       tester,
     ) async {
       final actions = FakeTaskActions();
@@ -248,14 +243,37 @@ void main() {
       );
 
       await tester.tap(find.byType(TaskCheck).first);
+      await tester.pump();
+      expect(
+        find.byType(ConfettiBurst),
+        findsOneWidget,
+        reason: 'the big burst starts straight away',
+      );
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('All done! +2 coins and +5 perfect day bonus'),
-        findsOneWidget,
+      expect(find.text('Congratulations!'), findsOneWidget);
+      expect(find.text('+7 coins today'), findsOneWidget, reason: '2 + 5');
+      final shown = celebrationQuotes.where(
+        (q) => find.text('\u201C${q.text}\u201D').evaluate().isNotEmpty,
       );
-      // Ticky celebrates; each reaction moves on to his next line.
+      expect(shown, hasLength(1), reason: 'one random line from the file');
+      // Ticky celebrates behind the sheet.
       expect(find.text('Perfect! I am so proud of you!'), findsOneWidget);
+
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(find.text('Congratulations!'), findsNothing);
+      await letReactionsFade(tester);
+    });
+
+    testWidgets('no sheet while tasks remain', (tester) async {
+      await pumpHome(tester, homeOverrides(entries: entries));
+
+      await tester.tap(find.byType(TaskCheck).first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Congratulations!'), findsNothing);
+      expect(find.byType(ConfettiBurst), findsNothing);
       await letReactionsFade(tester);
     });
 
@@ -290,7 +308,7 @@ void main() {
       ];
       await pumpHome(tester, homeOverrides(entries: skipped, actions: actions));
 
-      expect(find.text('Skipped'), findsOneWidget);
+      expect(find.textContaining('Skipped'), findsOneWidget);
       await tester.drag(find.text('Later'), const Offset(-500, 0));
       await tester.pumpAndSettle();
 

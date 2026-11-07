@@ -11,26 +11,29 @@ import 'package:ticky/core/notifications/notification_providers.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/utils/clock.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
-import 'package:ticky/core/widgets/primary_action_button.dart';
+import 'package:ticky/core/widgets/floating_nav_bar.dart';
 import 'package:ticky/features/categories/providers/category_providers.dart';
+import 'package:ticky/features/celebration/widgets/all_done_sheet.dart';
+import 'package:ticky/features/celebration/widgets/confetti.dart';
 import 'package:ticky/features/character/models/mascot_mood.dart';
 import 'package:ticky/features/home/models/daily_progress.dart';
+import 'package:ticky/features/home/models/home_headline.dart';
 import 'package:ticky/features/home/models/task_group.dart';
 import 'package:ticky/features/home/providers/home_providers.dart';
 import 'package:ticky/features/home/widgets/empty_state.dart';
 import 'package:ticky/features/home/widgets/home_header.dart';
 import 'package:ticky/features/home/widgets/notification_permission_sheet.dart';
-import 'package:ticky/features/home/widgets/progress_card.dart';
 import 'package:ticky/features/home/widgets/stat_info_sheet.dart';
 import 'package:ticky/features/home/widgets/task_actions_sheet.dart';
 import 'package:ticky/features/home/widgets/task_tile.dart';
+import 'package:ticky/features/home/widgets/ticky_hero.dart';
 import 'package:ticky/features/rewards/data/reward_config.dart';
 import 'package:ticky/features/rewards/providers/reward_providers.dart';
 import 'package:ticky/features/routine/models/streak.dart';
 import 'package:ticky/features/settings/providers/settings_providers.dart';
 import 'package:ticky/features/tasks/data/daily_record_repository.dart';
 
-/// Home: header with the time of day, Ticky and quick stats; today's progress;
+/// Home: greeting and quick stats, a headline, Ticky with today's progress,
 /// and the checklist grouped by time. Everything here is today only.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -119,17 +122,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final finishesDay =
         entry.record.status == TaskStatus.pending && progress.remaining == 1;
-    if (!await _attempt(() => actions.complete(id))) return;
+    if (!await _attempt(() => actions.complete(id)) || !mounted) return;
     HapticFeedback.mediumImpact();
-    _react(finishesDay ? MascotMood.celebrating : MascotMood.excited);
-
     final coins = coinsForPriority(entry.priority);
-    _showMessage(
-      finishesDay
-          ? 'All done! +$coins coins and +$perfectDayBonus perfect day bonus'
-          : 'Nice! +$coins coins',
-      onUndo: () => _attempt(() => actions.reopen(id)),
-    );
+
+    if (finishesDay) {
+      // The big moment: a full-screen burst, then a congratulations sheet.
+      _react(MascotMood.celebrating, hold: const Duration(seconds: 5));
+      playConfetti(context, style: ConfettiStyle.party);
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      if (!mounted) return;
+      await showAllDoneSheet(context, coinsEarned: coins + perfectDayBonus);
+      return;
+    }
+
+    _react(MascotMood.excited);
   }
 
   Future<void> _toggleSkip(DailyTaskEntry entry) async {
@@ -257,24 +264,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         (hasRoutinesAsync.isLoading && !hasRoutinesAsync.hasValue);
     final failed = entriesAsync.hasError && !entriesAsync.hasValue;
 
+    final headline = homeHeadline(progress, hasRoutines: hasRoutines);
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _refresh,
-        edgeOffset: HomeHeader.expandedHeight / 2,
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            HomeHeader(
-              now: now,
-              streak: streak,
-              coins: coins,
-              mood: mood,
-              idlePose: ref.watch(idlePoseProvider),
-              message: mascotMessage(mood, _messageIndex),
-              onMascotTap: () => _react(MascotMood.surprised),
-              onStreakTap: () => _showStreakInfo(streak),
-              onCoinsTap: () => _showCoinInfo(coins),
-              onSettingsTap: () => AppRoutes.openSettings(context),
+            SliverSafeArea(
+              bottom: false,
+              sliver: SliverToBoxAdapter(
+                child: HomeHeader(
+                  now: now,
+                  streak: streak,
+                  coins: coins,
+                  headline: headline,
+                  onStreakTap: () => _showStreakInfo(streak),
+                  onCoinsTap: () => _showCoinInfo(coins),
+                ),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg + 4,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: TickyHero(
+                  mood: mood,
+                  idlePose: ref.watch(idlePoseProvider),
+                  message: mascotMessage(mood, _messageIndex),
+                  progress: entries.isEmpty ? null : progress,
+                  onMascotTap: () => _react(MascotMood.surprised),
+                ),
+              ),
             ),
             if (loading)
               const SliverFillRemaining(
@@ -308,17 +331,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onSuggest: (s) => AppRoutes.openAddTask(context, suggestion: s),
               )
             else ...[
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.sm,
-                  AppSpacing.lg,
-                  AppSpacing.lg,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: ProgressCard(progress: progress),
-                ),
-              ),
               _ChecklistSliver(
                 entries: entries,
                 categories: categories,
@@ -328,25 +340,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 onOpen: (e) => AppRoutes.openTaskDetails(context, e.record.id),
                 onMore: (e) => _openActions(e, progress),
               ),
-              const SliverToBoxAdapter(child: SizedBox(height: 96)),
+              const SliverToBoxAdapter(
+                child: SizedBox(
+                  height: FloatingNavBar.reservedHeight + AppSpacing.xl,
+                ),
+              ),
             ],
           ],
         ),
-      ),
-      floatingActionButton: AnimatedSwitcher(
-        duration: AppMotion.medium,
-        transitionBuilder: (child, animation) =>
-            ScaleTransition(scale: animation, child: child),
-        child: entries.isEmpty
-            ? const SizedBox.shrink()
-            : Tooltip(
-                message: 'Add task',
-                child: PrimaryActionButton(
-                  compact: true,
-                  label: 'New task',
-                  onPressed: () => AppRoutes.openAddTask(context),
-                ),
-              ),
       ),
     );
   }
@@ -382,7 +383,12 @@ class _ChecklistSliver extends StatelessWidget {
     ];
 
     return SliverPadding(
-      padding: AppSpacing.screen,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg + 4,
+        AppSpacing.md,
+        AppSpacing.lg + 4,
+        0,
+      ),
       sliver: SliverList.builder(
         itemCount: items.length,
         itemBuilder: (context, index) {
@@ -423,20 +429,18 @@ class _GroupHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(
         top: AppSpacing.md,
-        bottom: AppSpacing.sm,
+        bottom: AppSpacing.md,
         left: AppSpacing.xs,
+        right: AppSpacing.xs,
       ),
       child: Semantics(
         header: true,
         child: Row(
           children: [
-            Icon(group.kind.icon, size: 18, color: scheme.secondary),
-            const SizedBox(width: AppSpacing.sm),
-            Text(group.kind.label, style: text.titleSmall),
-            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: Text(group.kind.label, style: text.titleMedium)),
             Text(
               '$done/${group.entries.length}',
-              style: text.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+              style: text.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ],
         ),

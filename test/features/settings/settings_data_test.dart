@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart' show ThemeMode;
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -78,6 +80,63 @@ void main() {
         () => env.settings.setDefaultSnoozeMinutes(0),
         throwsArgumentError,
       );
+    });
+  });
+
+  group('theme mode', () {
+    test('follows the system until the user chooses', () async {
+      expect(await env.settings.getThemeMode(), ThemeMode.system);
+    });
+
+    test('each choice is saved and read back', () async {
+      for (final mode in ThemeMode.values) {
+        await env.settings.setThemeMode(mode);
+        expect(await env.settings.getThemeMode(), mode);
+      }
+    });
+
+    test('an unknown stored value falls back to the system', () async {
+      await env.db
+          .into(env.db.appSettings)
+          .insert(
+            AppSettingsCompanion.insert(key: 'themeMode', value: 'sepia'),
+          );
+      expect(await env.settings.getThemeMode(), ThemeMode.system);
+    });
+
+    test(
+      'the controller loads the saved choice before the first frame',
+      () async {
+        await env.settings.setThemeMode(ThemeMode.dark);
+        final container = ProviderContainer(
+          overrides: [
+            settingsRepositoryProvider.overrideWithValue(env.settings),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        expect(container.read(themeModeProvider), ThemeMode.system);
+        await container.read(themeModeProvider.notifier).load();
+        expect(container.read(themeModeProvider), ThemeMode.dark);
+      },
+    );
+
+    test('selecting switches at once and saves', () async {
+      final container = ProviderContainer(
+        overrides: [settingsRepositoryProvider.overrideWithValue(env.settings)],
+      );
+      addTearDown(container.dispose);
+
+      final saving = container
+          .read(themeModeProvider.notifier)
+          .select(ThemeMode.light);
+      expect(
+        container.read(themeModeProvider),
+        ThemeMode.light,
+        reason: 'no wait for the database',
+      );
+      await saving;
+      expect(await env.settings.getThemeMode(), ThemeMode.light);
     });
   });
 

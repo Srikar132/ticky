@@ -29,7 +29,7 @@ Future<void> openForm(
     ProviderScope(
       overrides: overrides ?? homeOverrides(),
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: AppTheme.light,
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

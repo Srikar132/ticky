@@ -6,62 +6,103 @@ import 'package:ticky/core/theme/app_text_theme.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/theme/ticky_colors.dart';
 
-/// Ticky is dark-only: there is one theme.
+/// Ticky has a light and a dark theme; the user picks System, Light or Dark in
+/// Settings.
 ///
-/// The look is flat and calm: a near-black page, panels drawn with a hairline
-/// instead of a fill, white primary buttons, and purple only as an accent
-/// (focus, switches, selected states, links).
+/// Light: a pale lavender page, white content, big rounded pastel tiles and
+/// near-black for the strong moments (primary buttons, selected pills).
+/// Dark: the same shapes on a deep violet-black page with muted tiles.
+/// Purple is a quiet accent for focus, switches and links in both.
+///
+/// "Ink" (primary button, selected pill, tooltips) is `inverseSurface`, and the
+/// text on it is `onInverseSurface`, so widgets never hard-code black or white.
 abstract final class AppTheme {
-  static final ColorScheme colorScheme = const ColorScheme(
-    brightness: Brightness.dark,
+  static final ColorScheme lightScheme = const ColorScheme(
+    brightness: Brightness.light,
     primary: AppColors.premiumPurple,
-    // Dark text on the purple passes WCAG AA (4.6:1); light text would not.
-    onPrimary: AppColors.deepBackground,
+    onPrimary: AppColors.white,
     primaryContainer: AppColors.primaryContainer,
     onPrimaryContainer: AppColors.onPrimaryContainer,
     secondary: AppColors.softViolet,
-    onSecondary: AppColors.deepBackground,
+    onSecondary: AppColors.ink,
     secondaryContainer: AppColors.secondaryContainer,
     onSecondaryContainer: AppColors.onSecondaryContainer,
     tertiary: AppColors.highlight,
-    onTertiary: AppColors.deepBackground,
+    onTertiary: AppColors.ink,
     tertiaryContainer: AppColors.tertiaryContainer,
     onTertiaryContainer: AppColors.onPrimaryContainer,
     error: AppColors.error,
-    onError: AppColors.deepBackground,
+    onError: AppColors.white,
     errorContainer: AppColors.errorContainer,
     onErrorContainer: AppColors.onErrorContainer,
-    surface: AppColors.deepBackground,
-    onSurface: AppColors.white,
+    surface: AppColors.canvas,
+    onSurface: AppColors.ink,
     onSurfaceVariant: AppColors.textMuted,
-    surfaceDim: AppColors.surfaceLowest,
-    surfaceBright: AppColors.surfaceHighest,
-    surfaceContainerLowest: AppColors.surfaceLowest,
-    surfaceContainerLow: AppColors.surfaceLow,
-    surfaceContainer: AppColors.surface,
-    surfaceContainerHigh: AppColors.surfaceHigh,
-    surfaceContainerHighest: AppColors.surfaceHighest,
+    surfaceDim: AppColors.fillStrong,
+    surfaceBright: AppColors.white,
+    surfaceContainerLowest: AppColors.white,
+    surfaceContainerLow: AppColors.white,
+    surfaceContainer: AppColors.white,
+    surfaceContainerHigh: AppColors.fill,
+    surfaceContainerHighest: AppColors.fillStrong,
     outline: AppColors.outline,
     outlineVariant: AppColors.outlineSoft,
-    inverseSurface: AppColors.white,
-    onInverseSurface: AppColors.deepBackground,
-    inversePrimary: Color(0xFF7C3AED),
+    inverseSurface: AppColors.ink,
+    onInverseSurface: AppColors.white,
+    inversePrimary: AppColors.highlight,
     surfaceTint: AppColors.premiumPurple,
+    shadow: AppColors.ink,
+    scrim: AppColors.ink,
+  );
+
+  static final ColorScheme darkScheme = const ColorScheme(
+    brightness: Brightness.dark,
+    primary: AppDarkColors.premiumPurple,
+    onPrimary: AppDarkColors.onPrimary,
+    primaryContainer: AppDarkColors.primaryContainer,
+    onPrimaryContainer: AppDarkColors.onPrimaryContainer,
+    secondary: AppColors.softViolet,
+    onSecondary: AppDarkColors.onPrimary,
+    secondaryContainer: AppDarkColors.secondaryContainer,
+    onSecondaryContainer: AppDarkColors.onPrimaryContainer,
+    tertiary: AppColors.highlight,
+    onTertiary: AppDarkColors.onPrimary,
+    tertiaryContainer: AppDarkColors.tertiaryContainer,
+    onTertiaryContainer: AppDarkColors.onPrimaryContainer,
+    error: AppDarkColors.error,
+    onError: AppDarkColors.onPrimary,
+    errorContainer: AppDarkColors.errorContainer,
+    onErrorContainer: AppDarkColors.onErrorContainer,
+    surface: AppDarkColors.canvas,
+    onSurface: AppDarkColors.text,
+    onSurfaceVariant: AppDarkColors.textMuted,
+    surfaceDim: AppDarkColors.canvas,
+    surfaceBright: AppDarkColors.fillStrong,
+    surfaceContainerLowest: AppDarkColors.card,
+    surfaceContainerLow: AppDarkColors.card,
+    surfaceContainer: AppDarkColors.card,
+    surfaceContainerHigh: AppDarkColors.fill,
+    surfaceContainerHighest: AppDarkColors.fillStrong,
+    outline: AppDarkColors.outline,
+    outlineVariant: AppDarkColors.outlineSoft,
+    inverseSurface: AppDarkColors.text,
+    onInverseSurface: AppDarkColors.onPrimary,
+    inversePrimary: Color(0xFF7456E8),
+    surfaceTint: AppDarkColors.premiumPurple,
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
   );
 
-  static final ThemeData dark = _build();
+  static final ThemeData light = _build(Brightness.light);
+  static final ThemeData dark = _build(Brightness.dark);
 
-  static ThemeData _build() {
-    final scheme = colorScheme;
+  static ThemeData _build(Brightness brightness) {
+    final isLight = brightness == Brightness.light;
+    final scheme = isLight ? lightScheme : darkScheme;
+    final ink = scheme.inverseSurface;
+    final onInk = scheme.onInverseSurface;
     final text = buildTextTheme(scheme);
-    const buttonShape = RoundedRectangleBorder(borderRadius: AppRadius.mdAll);
-    const hairline = BorderSide(
-      color: AppColors.outlineSoft,
-      width: AppStroke.hairline,
-    );
-
+    const buttonShape = StadiumBorder();
     OutlineInputBorder inputBorder(Color color, double width) {
       return OutlineInputBorder(
         borderRadius: AppRadius.mdAll,
@@ -71,18 +112,18 @@ abstract final class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
       canvasColor: scheme.surface,
       textTheme: text,
-      extensions: const [TickyColors.dark],
+      extensions: [isLight ? TickyColors.light : TickyColors.dark],
       visualDensity: VisualDensity.standard,
-      // Quiet touch feedback: a faint wash, no sparkle.
+      // Soft touch feedback: a faint lavender wash.
       splashFactory: InkRipple.splashFactory,
-      splashColor: AppColors.white.withValues(alpha: 0.05),
-      highlightColor: AppColors.white.withValues(alpha: 0.03),
-      hoverColor: AppColors.white.withValues(alpha: 0.04),
+      splashColor: scheme.primary.withValues(alpha: 0.08),
+      highlightColor: scheme.primary.withValues(alpha: 0.04),
+      hoverColor: scheme.primary.withValues(alpha: 0.04),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
@@ -95,27 +136,26 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: text.titleMedium,
+        titleTextStyle: text.titleLarge,
         iconTheme: IconThemeData(color: scheme.onSurface, size: 22),
-        systemOverlayStyle: const SystemUiOverlayStyle(
+        systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light,
-          statusBarBrightness: Brightness.dark,
-          systemNavigationBarColor: AppColors.deepBackground,
-          systemNavigationBarIconBrightness: Brightness.light,
+          statusBarIconBrightness: isLight ? Brightness.dark : Brightness.light,
+          statusBarBrightness: isLight ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarIconBrightness: isLight
+              ? Brightness.dark
+              : Brightness.light,
         ),
       ),
-      // Panels are outlined, not filled: a hairline and almost no fill.
+      // Cards are white and softly rounded, with no outline.
       cardTheme: CardThemeData(
         color: scheme.surfaceContainerLow,
         surfaceTintColor: Colors.transparent,
         shadowColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppRadius.mdAll,
-          side: hairline,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
       ),
       dividerTheme: DividerThemeData(
         color: scheme.outlineVariant,
@@ -128,12 +168,12 @@ abstract final class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       ),
-      // Primary actions are solid, classic white with dark text.
+      // Primary actions are solid near-black with white text, fully rounded.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.white,
-          foregroundColor: AppColors.deepBackground,
-          disabledBackgroundColor: AppColors.white.withValues(alpha: 0.12),
+          backgroundColor: ink,
+          foregroundColor: onInk,
+          disabledBackgroundColor: ink.withValues(alpha: 0.12),
           disabledForegroundColor: scheme.onSurface.withValues(alpha: 0.38),
           minimumSize: const Size.fromHeight(AppSizes.control),
           shape: buttonShape,
@@ -163,7 +203,7 @@ abstract final class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: scheme.secondary,
+          foregroundColor: scheme.primary,
           shape: buttonShape,
           textStyle: text.labelLarge?.copyWith(fontSize: 15),
         ),
@@ -171,15 +211,13 @@ abstract final class AppTheme {
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(foregroundColor: scheme.onSurface),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.deepBackground,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(AppRadius.lg)),
-        ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: scheme.primary,
+        foregroundColor: scheme.onPrimary,
+        elevation: 0,
+        shape: const CircleBorder(),
       ),
-      // Outlined fields: a hairline, a faint fill, purple only when focused.
+      // Fields: a soft white fill with a faint border, purple when focused.
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerLow,
@@ -196,13 +234,18 @@ abstract final class AppTheme {
         focusedErrorBorder: inputBorder(scheme.error, AppStroke.focus),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.transparent,
-        selectedColor: scheme.primaryContainer,
-        side: BorderSide(
-          color: scheme.outlineVariant,
-          width: AppStroke.hairline,
+        backgroundColor: scheme.surfaceContainerLow,
+        selectedColor: ink,
+        secondarySelectedColor: ink,
+        side: BorderSide.none,
+        labelStyle: text.labelLarge?.copyWith(
+          fontSize: 14,
+          color: WidgetStateColor.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? onInk
+                : scheme.onSurface,
+          ),
         ),
-        labelStyle: text.labelLarge?.copyWith(fontSize: 13.5),
         shape: const StadiumBorder(),
         showCheckmark: false,
         elevation: 0,
@@ -210,20 +253,16 @@ abstract final class AppTheme {
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
-          shape: const WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: AppRadius.smAll),
-          ),
-          side: WidgetStatePropertyAll(
-            BorderSide(color: scheme.outlineVariant, width: AppStroke.hairline),
-          ),
+          shape: const WidgetStatePropertyAll(StadiumBorder()),
+          side: const WidgetStatePropertyAll(BorderSide.none),
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)
-                ? scheme.primaryContainer
-                : Colors.transparent,
+                ? ink
+                : scheme.surfaceContainerLow,
           ),
           foregroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)
-                ? scheme.onSurface
+                ? onInk
                 : scheme.onSurfaceVariant,
           ),
           textStyle: WidgetStatePropertyAll(text.labelLarge),
@@ -232,19 +271,15 @@ abstract final class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? AppColors.white
-              : scheme.onSurfaceVariant,
+              ? scheme.onPrimary
+              : scheme.outline,
         ),
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? scheme.primary
-              : scheme.surfaceContainerHigh,
+              : scheme.surfaceContainerHighest,
         ),
-        trackOutlineColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected)
-              ? Colors.transparent
-              : scheme.outlineVariant,
-        ),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
       checkboxTheme: CheckboxThemeData(
         shape: const CircleBorder(),
@@ -264,10 +299,7 @@ abstract final class AppTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surfaceContainer,
         surfaceTintColor: Colors.transparent,
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppRadius.lgAll,
-          side: hairline,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
         titleTextStyle: text.titleLarge,
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -278,34 +310,26 @@ abstract final class AppTheme {
         dragHandleSize: const Size(36, 4),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadius.lg),
+            top: Radius.circular(AppRadius.xl),
           ),
-          side: hairline,
         ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: scheme.surfaceContainerHigh,
-        contentTextStyle: text.bodyMedium,
-        actionTextColor: scheme.secondary,
+        backgroundColor: ink,
+        contentTextStyle: text.bodyMedium?.copyWith(color: onInk),
+        actionTextColor: scheme.inversePrimary,
         elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppRadius.mdAll,
-          side: hairline,
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
       ),
       tooltipTheme: TooltipThemeData(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: AppRadius.smAll,
-          border: Border.fromBorderSide(hairline),
-        ),
-        textStyle: text.bodySmall?.copyWith(color: scheme.onSurface),
+        decoration: BoxDecoration(color: ink, borderRadius: AppRadius.smAll),
+        textStyle: text.bodySmall?.copyWith(color: onInk),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: scheme.secondary,
-        selectionColor: scheme.primary.withValues(alpha: 0.35),
-        selectionHandleColor: scheme.secondary,
+        cursorColor: scheme.primary,
+        selectionColor: scheme.primary.withValues(alpha: 0.25),
+        selectionHandleColor: scheme.primary,
       ),
     );
   }

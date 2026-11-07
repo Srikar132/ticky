@@ -8,16 +8,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/app.dart';
 import 'package:ticky/app_notification_router.dart';
 import 'package:ticky/core/notifications/notification_providers.dart';
+import 'package:ticky/features/settings/providers/settings_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Lists Inter in the app's open-source licence page.
+  // Lists Outfit in the app's open-source licence page.
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks([
-      'Inter',
-    ], await rootBundle.loadString('assets/fonts/inter/OFL.txt'));
+      'Outfit',
+    ], await rootBundle.loadString('assets/fonts/outfit/OFL.txt'));
   });
   final container = ProviderContainer();
+  // The saved theme, before the first frame: no flash of the wrong theme.
+  await container.read(themeModeProvider.notifier).load();
   try {
     // Daily reconcile + reminder scheduling. Also re-runs on resume.
     await container.read(reminderCoordinatorProvider).start();

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ticky/features/home/screens/home_screen.dart';
-import 'package:ticky/features/settings/screens/settings_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ticky/app_shell.dart';
 import 'package:ticky/features/tasks/models/task_suggestion.dart';
 import 'package:ticky/features/tasks/screens/add_edit_task_screen.dart';
 import 'package:ticky/features/tasks/screens/task_details_screen.dart';
@@ -9,13 +9,18 @@ import 'package:ticky/features/tasks/screens/task_details_screen.dart';
 /// care of the route arguments.
 abstract final class AppRoutes {
   static const home = '/';
-  static const settings = '/settings';
   static const addTask = '/task/add';
   static const editTask = '/task/edit';
   static const taskDetails = '/task/details';
 
-  static Future<void> openSettings(BuildContext context) =>
-      Navigator.of(context).pushNamed(settings);
+  /// Settings is a root tab: close anything pushed over the shell, then switch.
+  static void openSettings(BuildContext context) {
+    ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(mainTabProvider.notifier).select(MainTab.settings);
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
 
   /// [suggestion] pre-fills the form with a starting point.
   static Future<void> openAddTask(
@@ -38,7 +43,6 @@ abstract final class AppRouter {
   static Route<void> onGenerateRoute(RouteSettings settings) {
     final args = settings.arguments;
     final Widget screen = switch (settings.name) {
-      AppRoutes.settings => const SettingsScreen(),
       AppRoutes.addTask => AddEditTaskScreen(
         suggestion: args is TaskSuggestion ? args : null,
       ),
@@ -46,7 +50,7 @@ abstract final class AppRouter {
       AppRoutes.taskDetails when args is int => TaskDetailsScreen(
         recordId: args,
       ),
-      _ => const HomeScreen(),
+      _ => const AppShell(),
     };
     return MaterialPageRoute<void>(builder: (_) => screen, settings: settings);
   }

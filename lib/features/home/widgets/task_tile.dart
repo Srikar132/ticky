@@ -4,14 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:ticky/core/database/app_database.dart';
 import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
+import 'package:ticky/core/theme/color_tones.dart';
 import 'package:ticky/core/theme/ticky_colors.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
+import 'package:ticky/features/celebration/widgets/confetti.dart';
 import 'package:ticky/features/categories/models/category_options.dart';
 import 'package:ticky/features/home/models/daily_progress.dart';
 import 'package:ticky/features/rewards/data/reward_config.dart';
 import 'package:ticky/features/tasks/data/daily_record_repository.dart';
 
-/// One checklist row.
+/// One checklist row: a white rounded card.
 ///
 /// - Tap the circle: complete, or undo.
 /// - Swipe right: complete (or undo). Swipe left: skip (or undo). The row
@@ -48,6 +50,7 @@ class TaskTile extends StatelessWidget {
     final skipped = status == TaskStatus.skipped;
     final overdue = isOverdue(entry, now);
     final scheduled = record.scheduledMinutes;
+    final coins = coinsForPriority(entry.priority);
 
     final titleStyle = text.titleMedium?.copyWith(
       decoration: completed ? TextDecoration.lineThrough : null,
@@ -55,52 +58,51 @@ class TaskTile extends StatelessWidget {
       color: (completed || skipped) ? scheme.onSurfaceVariant : null,
     );
 
-    // A flat row: no card, just a hairline under it.
-    return Dismissible(
-      key: ValueKey('task-${record.id}'),
-      background: _SwipeBackground(
-        color: colors.success,
-        icon: completed ? Icons.undo_rounded : Icons.check_rounded,
-        label: completed ? 'Undo' : 'Done',
-        alignment: Alignment.centerLeft,
-      ),
-      secondaryBackground: _SwipeBackground(
-        color: colors.warning,
-        icon: skipped ? Icons.undo_rounded : Icons.skip_next_rounded,
-        label: skipped ? 'Undo' : 'Skip',
-        alignment: Alignment.centerRight,
-      ),
-      // Act, then refuse the dismissal: the stream rebuilds the row.
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          onToggleComplete();
-        } else {
-          onToggleSkip();
-        }
-        return false;
-      },
-      child: AnimatedOpacity(
-        duration: AppMotion.medium,
-        opacity: (completed || skipped) ? 0.72 : 1,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onOpen,
-            onLongPress: onMore,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: scheme.outlineVariant,
-                    width: AppStroke.hairline,
-                  ),
-                ),
-              ),
+    final timeLabel = scheduled == null
+        ? null
+        : overdue
+        ? '${formatMinutesOfDay(scheduled)} · Overdue'
+        : formatMinutesOfDay(scheduled);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
+      child: ClipRRect(
+        borderRadius: AppRadius.lgAll,
+        child: Dismissible(
+          key: ValueKey('task-${record.id}'),
+          background: _SwipeBackground(
+            color: colors.tileMint,
+            foreground: colors.success,
+            icon: completed ? Icons.undo_rounded : Icons.check_rounded,
+            label: completed ? 'Undo' : 'Done',
+            alignment: Alignment.centerLeft,
+          ),
+          secondaryBackground: _SwipeBackground(
+            color: colors.tileButter,
+            foreground: colors.warning,
+            icon: skipped ? Icons.undo_rounded : Icons.skip_next_rounded,
+            label: skipped ? 'Undo' : 'Skip',
+            alignment: Alignment.centerRight,
+          ),
+          // Act, then refuse the dismissal: the stream rebuilds the row.
+          confirmDismiss: (direction) async {
+            if (direction == DismissDirection.startToEnd) {
+              onToggleComplete();
+            } else {
+              onToggleSkip();
+            }
+            return false;
+          },
+          child: Material(
+            color: scheme.surfaceContainerLow,
+            child: InkWell(
+              onTap: onOpen,
+              onLongPress: onMore,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  0,
                   AppSpacing.xs,
                   AppSpacing.xs,
+                  AppSpacing.lg,
                   AppSpacing.xs,
                 ),
                 child: Row(
@@ -110,57 +112,57 @@ class TaskTile extends StatelessWidget {
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.sm,
+                          vertical: AppSpacing.sm + 2,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              record.titleSnapshot,
-                              style: titleStyle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: AppSpacing.xs + 2),
-                            Wrap(
-                              spacing: AppSpacing.md,
-                              runSpacing: AppSpacing.xs,
-                              children: [
-                                if (scheduled != null)
-                                  _Meta(
-                                    icon: overdue
-                                        ? Icons.error_outline_rounded
-                                        : Icons.schedule_rounded,
-                                    label: overdue
-                                        ? '${formatMinutesOfDay(scheduled)} · Overdue'
-                                        : formatMinutesOfDay(scheduled),
-                                    color: overdue
-                                        ? colors.warning
-                                        : scheme.onSurfaceVariant,
-                                  ),
-                                if (skipped)
-                                  _Meta(
-                                    icon: Icons.skip_next_rounded,
-                                    label: 'Skipped',
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                                if (category != null)
-                                  _Meta(
-                                    icon: iconForCategoryKey(category!.iconKey),
-                                    label: category!.title,
-                                    color: Color(category!.colorValue),
-                                  ),
+                        child: AnimatedOpacity(
+                          duration: AppMotion.medium,
+                          opacity: (completed || skipped) ? 0.6 : 1,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                record.titleSnapshot,
+                                style: titleStyle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (timeLabel != null ||
+                                  skipped ||
+                                  category != null) ...[
+                                const SizedBox(height: AppSpacing.xs + 2),
+                                Wrap(
+                                  spacing: AppSpacing.sm,
+                                  runSpacing: AppSpacing.xs,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  children: [
+                                    if (timeLabel != null || skipped)
+                                      Text(
+                                        skipped
+                                            ? (timeLabel == null
+                                                  ? 'Skipped'
+                                                  : '$timeLabel · Skipped')
+                                            : timeLabel!,
+                                        style: text.bodySmall?.copyWith(
+                                          color: overdue && !skipped
+                                              ? colors.warning
+                                              : scheme.onSurfaceVariant,
+                                          fontWeight: overdue && !skipped
+                                              ? FontWeight.w600
+                                              : null,
+                                        ),
+                                      ),
+                                    if (category != null)
+                                      _CategoryPill(category: category!),
+                                  ],
+                                ),
                               ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    _RewardBadge(
-                      coins: coinsForPriority(entry.priority),
-                      earned: completed,
-                    ),
+                    _RewardBadge(coins: coins, earned: completed),
                   ],
                 ),
               ),
@@ -174,16 +176,42 @@ class TaskTile extends StatelessWidget {
 
 /// The round check button. Pending is an empty ring, completed fills in with
 /// a tick, skipped shows a dimmed skip icon.
-class TaskCheck extends StatelessWidget {
+///
+/// When a task becomes completed, a small confetti pop bursts from the circle.
+class TaskCheck extends StatefulWidget {
   const TaskCheck({super.key, required this.status, required this.onTap});
 
   final TaskStatus status;
   final VoidCallback onTap;
 
   @override
+  State<TaskCheck> createState() => _TaskCheckState();
+}
+
+class _TaskCheckState extends State<TaskCheck> {
+  @override
+  void didUpdateWidget(TaskCheck oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.status != TaskStatus.completed &&
+        widget.status == TaskStatus.completed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _pop());
+    }
+  }
+
+  void _pop() {
+    if (!mounted) return;
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.attached) return;
+    playConfetti(
+      context,
+      origin: box.localToGlobal(box.size.center(Offset.zero)),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final success = context.tickyColors.success;
+    final status = widget.status;
     final completed = status == TaskStatus.completed;
     final skipped = status == TaskStatus.skipped;
 
@@ -193,7 +221,7 @@ class TaskCheck extends StatelessWidget {
       label: completed ? 'Completed, tap to undo' : 'Mark as done',
       excludeSemantics: true,
       child: InkResponse(
-        onTap: onTap,
+        onTap: widget.onTap,
         radius: 28,
         child: SizedBox(
           width: 52,
@@ -207,12 +235,12 @@ class TaskCheck extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: completed
-                    ? success
+                    ? scheme.inverseSurface
                     : skipped
                     ? scheme.surfaceContainerHighest
                     : Colors.transparent,
                 border: Border.all(
-                  color: completed ? success : scheme.outline,
+                  color: completed ? scheme.inverseSurface : scheme.outline,
                   width: 1.5,
                 ),
               ),
@@ -225,7 +253,7 @@ class TaskCheck extends StatelessWidget {
                         Icons.check_rounded,
                         key: const ValueKey('check'),
                         size: 20,
-                        color: scheme.onPrimary,
+                        color: scheme.onInverseSurface,
                       )
                     : skipped
                     ? Icon(
@@ -244,35 +272,54 @@ class TaskCheck extends StatelessWidget {
   }
 }
 
-class _Meta extends StatelessWidget {
-  const _Meta({required this.icon, required this.label, required this.color});
+/// The category as a small pastel pill.
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({required this.category});
 
-  final IconData icon;
-  final String label;
-  final Color color;
+  final Category category;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 15, color: color),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium?.copyWith(color: color),
-          ),
+    final accent = Color(category.colorValue);
+    final brightness = Theme.of(context).brightness;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: accent.soft(brightness),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm + 2,
+          vertical: 3,
         ),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              iconForCategoryKey(category.iconKey),
+              size: 13,
+              color: accent.deep(brightness),
+            ),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                category.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: accent.deep(brightness),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
+/// "+2" in a soft butter pill. Fills in once the coins are earned.
 class _RewardBadge extends StatelessWidget {
   const _RewardBadge({required this.coins, required this.earned});
 
@@ -283,22 +330,26 @@ class _RewardBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.tickyColors;
     final scheme = Theme.of(context).colorScheme;
-    final color = earned ? colors.coin : scheme.onSurfaceVariant;
     return Semantics(
       label: earned ? '$coins coins earned' : '$coins coins reward',
       excludeSemantics: true,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.monetization_on_rounded, size: 16, color: color),
-          const SizedBox(width: 3),
-          Text(
-            '+$coins',
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: color),
+      child: AnimatedContainer(
+        duration: AppMotion.medium,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm + 2,
+          vertical: 4,
+        ),
+        decoration: BoxDecoration(
+          color: earned ? colors.tileButter : scheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Text(
+          '+$coins',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: earned ? colors.coin : scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -307,20 +358,22 @@ class _RewardBadge extends StatelessWidget {
 class _SwipeBackground extends StatelessWidget {
   const _SwipeBackground({
     required this.color,
+    required this.foreground,
     required this.icon,
     required this.label,
     required this.alignment,
   });
 
   final Color color;
+  final Color foreground;
   final IconData icon;
   final String label;
   final Alignment alignment;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.2)),
+    return ColoredBox(
+      color: color,
       child: Align(
         alignment: alignment,
         child: Padding(
@@ -328,13 +381,13 @@ class _SwipeBackground extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color),
+              Icon(icon, color: foreground),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 label,
                 style: Theme.of(
                   context,
-                ).textTheme.labelLarge?.copyWith(color: color),
+                ).textTheme.labelLarge?.copyWith(color: foreground),
               ),
             ],
           ),
