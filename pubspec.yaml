@@ -72,26 +72,24 @@ flutter:
   uses-material-design: true
 
   assets:
-    # Home header art per time of day (see assets/home/README.txt).
-    - assets/home/
     # Mascot art. The only code that references these paths is
     # lib/features/character/models/mascot_assets.dart.
     - assets/ticky_asset_pack/character/
     - assets/ticky_asset_pack/character/expressions/
     - assets/ticky_asset_pack/character/actions/
-    # Inter's licence (SIL OFL), shown in the app's licence page.
-    - assets/fonts/inter/OFL.txt
+    # Outfit's licence (SIL OFL), shown in the app's licence page.
+    - assets/fonts/outfit/OFL.txt
 
-  # Inter, the app font (see lib/core/theme/app_text_theme.dart).
+  # Outfit, the app font (see lib/core/theme/app_text_theme.dart).
   fonts:
-    - family: Inter
+    - family: Outfit
       fonts:
-        - asset: assets/fonts/inter/Inter-Regular.ttf
-        - asset: assets/fonts/inter/Inter-Medium.ttf
+        - asset: assets/fonts/outfit/Outfit-Regular.ttf
+        - asset: assets/fonts/outfit/Outfit-Medium.ttf
           weight: 500
-        - asset: assets/fonts/inter/Inter-SemiBold.ttf
+        - asset: assets/fonts/outfit/Outfit-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/inter/Inter-Bold.ttf
+        - asset: assets/fonts/outfit/Outfit-Bold.ttf
           weight: 700
 
   # To add assets to your application, add an assets section, like this:
@@ -132,7 +130,7 @@ flutter_launcher_icons:
   image_path: assets/branding/app_icon_1024.png
   min_sdk_android: 24
   remove_alpha_ios: true
-  adaptive_icon_background: "#0B0912"
+  adaptive_icon_background: "#EDE7FF"
   adaptive_icon_foreground: assets/branding/adaptive_foreground_1024.png
   adaptive_icon_monochrome: assets/branding/adaptive_monochrome_1024.png
   # The branding files are already padded into the adaptive safe zone, so no
@@ -141,9 +139,16 @@ flutter_launcher_icons:
 
 # Native splash: run `dart run flutter_native_splash:create` after changes.
 flutter_native_splash:
-  color: "#0B0912"
+  # The system picks the light or dark set, so the splash follows the phone's
+  # theme with no code. Colours match AppColors.canvas / AppDarkColors.canvas.
+  color: "#F6F3FF"
+  color_dark: "#110F18"
   image: assets/branding/adaptive_foreground_1024.png
+  image_dark: assets/branding/adaptive_foreground_1024.png
   android_12:
-    color: "#0B0912"
+    color: "#F6F3FF"
+    color_dark: "#110F18"
     image: assets/branding/adaptive_foreground_1024.png
-    icon_background_color: "#0B0912"
+    image_dark: assets/branding/adaptive_foreground_1024.png
+    icon_background_color: "#F6F3FF"
+    icon_background_color_dark: "#110F18"

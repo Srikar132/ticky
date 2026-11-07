@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import 'package:flutter/material.dart' show ThemeMode;
+
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ticky/core/database/app_database.dart';
@@ -7,6 +9,7 @@ import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/core/notifications/notification_providers.dart';
 import 'package:ticky/core/notifications/notification_service.dart';
 import 'package:ticky/core/utils/clock.dart';
+import 'package:ticky/core/utils/date_keys.dart';
 import 'package:ticky/features/categories/data/category_repository.dart';
 import 'package:ticky/features/categories/models/category_draft.dart';
 import 'package:ticky/features/categories/providers/category_providers.dart';
@@ -221,6 +224,23 @@ class FakeSettingsActions implements SettingsActions {
       calls.add('snooze:$minutes');
 }
 
+/// Starts on a fixed theme and records choices instead of saving them.
+class FakeThemeModeController extends ThemeModeController {
+  FakeThemeModeController([this.initial = ThemeMode.light]);
+
+  final ThemeMode initial;
+  final selected = <ThemeMode>[];
+
+  @override
+  ThemeMode build() => initial;
+
+  @override
+  Future<void> select(ThemeMode mode) async {
+    selected.add(mode);
+    state = mode;
+  }
+}
+
 /// Records shop purchases instead of touching a database.
 class FakeShopActions implements ShopActions {
   final calls = <String>[];
@@ -350,10 +370,15 @@ List<Override> homeOverrides({
   FakeSettingsActions? settingsActions,
   FakeShopActions? shopActions,
   FakeCategoryRepository? categoryRepository,
+  ThemeMode themeMode = ThemeMode.light,
+  FakeThemeModeController? themeController,
 }) {
   final time = now ?? DateTime(2026, 11, 2, 9);
   final fakeRoutines = routines ?? FakeRoutineRepository();
   return [
+    themeModeProvider.overrideWith(
+      () => themeController ?? FakeThemeModeController(themeMode),
+    ),
     notificationPrefsProvider.overrideWith((ref) => Stream.value(prefs)),
     notificationPermissionProvider.overrideWith(
       (ref) async => NotificationPermissionStatus(
@@ -401,6 +426,7 @@ List<Override> homeOverrides({
     ),
     clockProvider.overrideWithValue(() => time),
     nowProvider.overrideWith((ref) => Stream.value(time)),
+    todayKeyProvider.overrideWith((ref) => Stream.value(dateKeyOf(time))),
     todayEntriesProvider.overrideWith((ref) => Stream.value(entries)),
     hasRoutinesProvider.overrideWith((ref) => Stream.value(hasRoutines)),
     streakProvider.overrideWith((ref) => Stream.value(streak)),

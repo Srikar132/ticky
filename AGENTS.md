@@ -67,6 +67,18 @@ Follow these design principles:
 - Use gestures wherever they improve usability.
 - Maintain consistent design across all screens.
 
+## Visual language (Nov 2026 redesign)
+
+Cute and calm, not dense: soft lavender page, white rounded cards, big pastel tiles, near-black "ink" for strong moments.
+
+- **Theme:** Light, Dark or System, chosen in Settings (Appearance). Saved as `themeMode` (`system` default), loaded in `main()` before `runApp` so the app never flashes the wrong theme. The native splash follows the system theme through `flutter_native_splash` (`color_dark`); it cannot know an in-app override.
+- **Tokens live in `lib/core/theme`:** `AppColors` (light), `AppDarkColors` (dark), `TickyColors` (status and pastel tile colours via `context.tickyColors`), `AppTokens` (spacing, radii, sizes, motion). Never hard-code black, white or a hex in a widget. "Ink" is `colorScheme.inverseSurface`, text on it `onInverseSurface`, a card is `surfaceContainerLow`.
+- **Font:** Outfit (bundled in `assets/fonts/outfit`, SIL OFL).
+- **Shapes:** cards radius 24, tiles and sheets 24 to 32, buttons and chips fully round. No hairline boxes; grouping is a white card on the lavender page.
+- **Navigation:** a floating bottom bar (Home, add task, Settings) in `lib/app_shell.dart`. Detail and form screens are pushed over it. `AppRoutes.openSettings` switches the tab.
+- **Celebrations:** a small confetti pop on the check circle when a task is completed. Finishing the last task plays a full-screen burst and a congratulations sheet with a random line from `lib/features/celebration/data/celebration_quotes.dart`. Both respect the system "reduce motion" setting. There is no toast for a normal completion.
+- Prefer Flutter built-ins (`ThemeMode`, `ColorScheme`, `ThemeExtension`) over custom replacements.
+
 The main screens are:
 
 **Home Screen**

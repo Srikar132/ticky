@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:ticky/core/database/app_database.dart';
 import 'package:ticky/features/settings/models/notification_prefs.dart';
 
@@ -15,6 +16,7 @@ class SettingsRepository {
   static const _defaultSnoozeMinutes = 'defaultSnoozeMinutes';
   static const _notificationPromptDismissedAt = 'notificationPromptDismissedAt';
   static const _equippedMascotItem = 'equippedMascotItem';
+  static const _themeMode = 'themeMode';
 
   /// Local date (`yyyy-MM-dd`) of the last completed daily reconcile.
   Future<String?> getLastReconciledDateKey() => _read(_lastReconciledDateKey);
@@ -98,6 +100,20 @@ class SettingsRepository {
     } else {
       await _write(_equippedMascotItem, itemKey);
     }
+  }
+
+  /// How the app picks its theme. Defaults to following the system.
+  Future<ThemeMode> getThemeMode() async =>
+      _themeModeFrom(await _read(_themeMode));
+
+  /// Stored by name: `system`, `light` or `dark`.
+  Future<void> setThemeMode(ThemeMode mode) => _write(_themeMode, mode.name);
+
+  static ThemeMode _themeModeFrom(String? raw) {
+    for (final mode in ThemeMode.values) {
+      if (mode.name == raw) return mode;
+    }
+    return ThemeMode.system;
   }
 
   Future<String?> _read(String key) async {

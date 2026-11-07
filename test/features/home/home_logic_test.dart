@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ticky/features/home/models/home_headline.dart';
 import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/features/character/models/mascot_mood.dart';
 import 'package:ticky/features/home/models/daily_progress.dart';
@@ -221,15 +222,6 @@ void main() {
       expect(at(0), DayPhase.night);
     });
 
-    test('asset paths match the files described in assets/home/README', () {
-      expect(DayPhase.morning.headerAsset, 'assets/home/header_morning.png');
-      expect(
-        DayPhase.afternoon.headerAsset,
-        'assets/home/header_afternoon.png',
-      );
-      expect(DayPhase.night.headerAsset, 'assets/home/header_night.png');
-    });
-
     test('greetings', () {
       String at(int hour) => greetingFor(DateTime(2026, 11, 2, hour));
 
@@ -285,6 +277,38 @@ void main() {
         final count = mascotMessages[m]!.length;
         expect(mascotMessage(m, count), mascotMessage(m, 0));
       }
+    });
+  });
+
+  group('homeHeadline', () {
+    String headline(
+      int completed,
+      int total, {
+      int skipped = 0,
+      bool has = true,
+    }) => homeHeadline(
+      DailyProgress(total: total, completed: completed, skipped: skipped),
+      hasRoutines: has,
+    );
+
+    test('a brand new user is invited to build a day', () {
+      expect(headline(0, 0, has: false), 'Let’s build your day.');
+    });
+
+    test('routines that do not run today make a free day', () {
+      expect(headline(0, 0), 'A free day.');
+    });
+
+    test('follows the progress through the day', () {
+      expect(headline(0, 4), 'Start today’s tasks.');
+      expect(headline(1, 4), 'Keep it going.');
+      expect(headline(3, 4), 'Just one to go.');
+      expect(headline(4, 4), 'Perfect day!');
+    });
+
+    test('skipped tasks do not hold back the perfect day', () {
+      expect(headline(3, 4, skipped: 1), 'Perfect day!');
+      expect(headline(0, 2, skipped: 2), 'Nothing left today.');
     });
   });
 }

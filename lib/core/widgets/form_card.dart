@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ticky/core/theme/app_colors.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 
-/// A group of related form rows, set off by a hairline above and below. No box
-/// and no fill: whitespace and the lines do the grouping.
+/// A group of related form rows on one white rounded card. Whitespace and the
+/// card edge do the grouping, with no lines between rows.
 class FormCard extends StatelessWidget {
   const FormCard({super.key, required this.children});
 
@@ -11,15 +10,18 @@ class FormCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const line = BorderSide(
-      color: AppColors.outlineSoft,
-      width: AppStroke.hairline,
-    );
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border.symmetric(horizontal: line),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: AppRadius.lgAll,
       ),
-      child: Column(children: children),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.xs,
+        ),
+        child: Column(children: children),
+      ),
     );
   }
 }

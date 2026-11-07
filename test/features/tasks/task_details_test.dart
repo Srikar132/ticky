@@ -149,7 +149,7 @@ void main() {
             ...extra,
           ],
           child: MaterialApp(
-            theme: AppTheme.dark,
+            theme: AppTheme.light,
             onGenerateRoute: AppRouter.onGenerateRoute,
             home: Builder(
               builder: (context) => Scaffold(
@@ -398,7 +398,7 @@ void main() {
             routineActions: actions,
           ),
           child: MaterialApp(
-            theme: AppTheme.dark,
+            theme: AppTheme.light,
             home: Builder(
               builder: (context) => Scaffold(
                 body: Center(

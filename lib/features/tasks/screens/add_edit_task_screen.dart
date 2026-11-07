@@ -7,7 +7,9 @@ import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 import 'package:ticky/core/utils/clock.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
+import 'package:ticky/core/widgets/pill_segments.dart';
 import 'package:ticky/core/widgets/primary_action_button.dart';
+import 'package:ticky/core/widgets/round_icon_button.dart';
 import 'package:ticky/features/categories/providers/category_providers.dart';
 import 'package:ticky/features/home/widgets/notification_permission_sheet.dart';
 import 'package:ticky/features/rewards/data/reward_config.dart';
@@ -50,7 +52,7 @@ class AddEditTaskScreen extends ConsumerWidget {
     // While loading (a few milliseconds) the page shows only its title, with
     // no spinner, so nothing flashes before the form appears.
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(leading: const RoundBackButton(), title: Text(title)),
       body: form.hasError
           ? _UnavailableTask(
               message: form.error is DataException
@@ -267,7 +269,10 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
         if (!didPop) _confirmDiscard();
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(widget.title)),
+        appBar: AppBar(
+          leading: const RoundBackButton(),
+          title: Text(widget.title),
+        ),
         body: Column(
           children: [
             Expanded(
@@ -392,28 +397,17 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                           children: [
                             Text('Priority', style: text.bodyLarge),
                             const SizedBox(height: AppSpacing.md),
-                            SizedBox(
-                              width: double.infinity,
-                              child: SegmentedButton<Priority>(
-                                showSelectedIcon: false,
-                                segments: const [
-                                  ButtonSegment(
-                                    value: Priority.low,
-                                    label: Text('Low'),
-                                  ),
-                                  ButtonSegment(
-                                    value: Priority.medium,
-                                    label: Text('Medium'),
-                                  ),
-                                  ButtonSegment(
-                                    value: Priority.high,
-                                    label: Text('High'),
-                                  ),
-                                ],
-                                selected: {values.priority},
-                                onSelectionChanged: (s) =>
-                                    _controller.setPriority(s.first),
-                              ),
+                            PillSegments<Priority>(
+                              selected: values.priority,
+                              onChanged: _controller.setPriority,
+                              options: const [
+                                PillOption(value: Priority.low, label: 'Low'),
+                                PillOption(
+                                  value: Priority.medium,
+                                  label: 'Medium',
+                                ),
+                                PillOption(value: Priority.high, label: 'High'),
+                              ],
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(

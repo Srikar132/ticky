@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
 import 'package:ticky/core/database/database_provider.dart';
@@ -18,6 +19,35 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 final notificationPrefsProvider = StreamProvider<NotificationPrefs>(
   (ref) => ref.watch(settingsRepositoryProvider).watchNotificationPrefs(),
 );
+
+/// The theme choice: follow the system (the default), light or dark.
+///
+/// It holds a plain value, not a stream, so the app can read it before the
+/// first frame. `main()` calls [ThemeModeController.load] before `runApp`, so
+/// the app never opens in one theme and then flips to another.
+final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(
+  ThemeModeController.new,
+);
+
+class ThemeModeController extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() => ThemeMode.system;
+
+  /// Reads the saved choice. A failure keeps following the system.
+  Future<void> load() async {
+    try {
+      state = await ref.read(settingsRepositoryProvider).getThemeMode();
+    } on Object {
+      state = ThemeMode.system;
+    }
+  }
+
+  /// Switches at once, then saves the choice.
+  Future<void> select(ThemeMode mode) async {
+    state = mode;
+    await ref.read(settingsRepositoryProvider).setThemeMode(mode);
+  }
+}
 
 /// What the phone currently allows. Invalidate it when the app resumes, since
 /// the user may have changed it in system settings.

@@ -10,9 +10,6 @@ abstract final class MascotAssets {
   static const _expressions = 'assets/ticky_asset_pack/character/expressions';
   static const _actions = 'assets/ticky_asset_pack/character/actions';
 
-  /// Big, front-and-centre pose for welcome and empty screens.
-  static const hero = 'assets/ticky_asset_pack/character/ticky_hero.png';
-
   /// Alternate idle poses, by id. These are the poses the item shop unlocks;
   /// each id is the file name in the actions folder.
   static const poses = <String>{

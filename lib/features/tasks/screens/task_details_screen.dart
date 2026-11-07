@@ -6,6 +6,9 @@ import 'package:ticky/core/database/app_database.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
 import 'package:ticky/core/database/enums.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
+import 'package:ticky/core/theme/ticky_colors.dart';
+import 'package:ticky/core/widgets/form_card.dart';
+import 'package:ticky/core/widgets/round_icon_button.dart';
 import 'package:ticky/core/utils/clock.dart';
 import 'package:ticky/core/utils/date_keys.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
@@ -188,27 +191,28 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const RoundBackButton(),
         actions: [
           if (details.canEdit)
-            IconButton(
+            RoundIconButton(
               tooltip: 'Edit task',
-              icon: const Icon(Icons.edit_outlined),
+              icon: Icons.edit_outlined,
               onPressed: () =>
                   AppRoutes.openEditTask(context, record.routineTaskId),
             ),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: AppSpacing.lg),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl,
-          AppSpacing.xs,
-          AppSpacing.xl,
+          AppSpacing.lg + 4,
+          AppSpacing.sm,
+          AppSpacing.lg + 4,
           AppSpacing.xxl,
         ),
         children: [
           _Header(details: details),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
           if (details.canChangeStatus)
             _StatusActions(
               details: details,
@@ -220,8 +224,6 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
           else
             const _ReadOnlyNote(),
           const SizedBox(height: AppSpacing.lg),
-          const Divider(),
-          const SizedBox(height: AppSpacing.sm),
           _Properties(
             details: details,
             category: categories[routine?.categoryId],
@@ -229,23 +231,26 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
           ),
           if (!details.routineIsActive) ...[
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              'This task was deleted. Its history stays.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            Center(
+              child: Text(
+                'This task was deleted. Its history stays.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
           ],
           if (details.canDelete) ...[
             const SizedBox(height: AppSpacing.xl),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.center,
               child: TextButton.icon(
                 onPressed: () => _delete(details),
                 style: TextButton.styleFrom(
                   foregroundColor: Theme.of(context).colorScheme.error,
+                  minimumSize: const Size(0, AppSizes.compactControl),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
+                    horizontal: AppSpacing.lg,
                   ),
                 ),
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
@@ -285,7 +290,8 @@ class _Message extends StatelessWidget {
   }
 }
 
-/// Title, status and day, then the notes.
+/// A pastel card with the status, the day, the title and the notes. The colour
+/// follows the status: lavender to do, mint done, butter skipped, pink missed.
 class _Header extends StatelessWidget {
   const _Header({required this.details});
 
@@ -295,47 +301,57 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
+    final colors = context.tickyColors;
     final done = details.status == TaskStatus.completed;
     final description = details.routine?.description;
     final day = details.isToday
         ? 'Today'
         : formatLongDate(parseDateKey(details.record.dateKey));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          details.record.titleSnapshot,
-          style: text.headlineSmall?.copyWith(
-            decoration: done ? TextDecoration.lineThrough : null,
-            decorationColor: scheme.onSurfaceVariant,
-            color: done ? scheme.onSurfaceVariant : null,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
+    final tint = switch (details.status) {
+      TaskStatus.pending => colors.tileLavender,
+      TaskStatus.completed => colors.tileMint,
+      TaskStatus.skipped => colors.tileButter,
+      TaskStatus.missed => colors.tilePink,
+    };
+    return DecoratedBox(
+      decoration: BoxDecoration(color: tint, borderRadius: AppRadius.xlAll),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            StatusPill(status: details.status),
-            const SizedBox(width: AppSpacing.md),
-            Flexible(
-              child: Text(
-                day,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: text.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
+            Row(
+              children: [
+                StatusPill(status: details.status),
+                const SizedBox(width: AppSpacing.md),
+                Flexible(
+                  child: Text(
+                    day,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: text.bodyMedium?.copyWith(color: scheme.onSurface),
+                  ),
                 ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              details.record.titleSnapshot,
+              style: text.headlineMedium?.copyWith(
+                decoration: done ? TextDecoration.lineThrough : null,
+                decorationColor: scheme.onSurfaceVariant,
               ),
             ),
+            if (description != null && description.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                description,
+                style: text.bodyLarge?.copyWith(color: scheme.onSurface),
+              ),
+            ],
           ],
         ),
-        if (description != null && description.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            description,
-            style: text.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ],
+      ),
     );
   }
 }
@@ -367,7 +383,8 @@ class _ReadOnlyNote extends StatelessWidget {
   }
 }
 
-/// The few things you can do to today's task, as compact buttons.
+/// The few things you can do to today's task. A big Done button, then Skip
+/// and Snooze as soft pills that share the row.
 class _StatusActions extends StatelessWidget {
   const _StatusActions({
     required this.details,
@@ -383,63 +400,106 @@ class _StatusActions extends StatelessWidget {
   final VoidCallback onReopen;
   final VoidCallback onSnooze;
 
-  static const _size = Size.fromHeight(AppSizes.compactControl);
-
   @override
   Widget build(BuildContext context) {
-    final filled = FilledButton.styleFrom(minimumSize: _size);
-    final outlined = OutlinedButton.styleFrom(minimumSize: _size);
-    const gap = SizedBox(width: AppSpacing.sm);
-
     switch (details.status) {
       case TaskStatus.pending:
-        return Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              flex: 3,
-              child: FilledButton(
-                style: filled,
-                onPressed: onComplete,
-                child: const Text('Done'),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(AppSizes.control + 2),
               ),
+              onPressed: onComplete,
+              icon: const Icon(Icons.check_rounded, size: 22),
+              label: const Text('Done'),
             ),
-            gap,
-            Expanded(
-              flex: 2,
-              child: OutlinedButton(
-                style: outlined,
-                onPressed: onSkip,
-                child: const Text('Skip'),
-              ),
-            ),
-            if (details.canSnooze) ...[
-              gap,
-              Expanded(
-                flex: 2,
-                child: OutlinedButton(
-                  style: outlined,
-                  onPressed: onSnooze,
-                  child: const Text('Snooze'),
+            const SizedBox(height: AppSpacing.sm + 2),
+            Row(
+              children: [
+                Expanded(
+                  child: _SoftAction(
+                    icon: Icons.skip_next_rounded,
+                    label: 'Skip',
+                    onTap: onSkip,
+                  ),
                 ),
-              ),
-            ],
+                if (details.canSnooze) ...[
+                  const SizedBox(width: AppSpacing.sm + 2),
+                  Expanded(
+                    child: _SoftAction(
+                      icon: Icons.snooze_rounded,
+                      label: 'Snooze',
+                      onTap: onSnooze,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ],
         );
       case TaskStatus.completed:
-        return OutlinedButton(
-          style: outlined,
-          onPressed: onReopen,
-          child: const Text('Mark as not done'),
+        return _SoftAction(
+          icon: Icons.undo_rounded,
+          label: 'Mark as not done',
+          onTap: onReopen,
         );
       case TaskStatus.skipped:
-        return OutlinedButton(
-          style: outlined,
-          onPressed: onReopen,
-          child: const Text('Undo skip'),
+        return _SoftAction(
+          icon: Icons.undo_rounded,
+          label: 'Undo skip',
+          onTap: onReopen,
         );
       case TaskStatus.missed:
         return const SizedBox.shrink();
     }
+  }
+}
+
+/// A white rounded pill with an icon and a label.
+class _SoftAction extends StatelessWidget {
+  const _SoftAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerLow,
+      shape: const StadiumBorder(),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          height: AppSizes.control,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: scheme.onSurface),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -478,7 +538,7 @@ class _Properties extends StatelessWidget {
       return '$label · $coins ${coins == 1 ? 'coin' : 'coins'}';
     }
 
-    return Column(
+    return FormCard(
       children: [
         PropertyRow(icon: Icons.schedule_rounded, label: 'Time', value: time()),
         if (snoozeEnd != null)

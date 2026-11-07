@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:ticky/core/theme/app_colors.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
 
-/// Ticky's main call-to-action: a solid, classic white button with dark text
-/// and a dark icon badge. No gradient, no glow; depth comes from a soft shadow.
+/// Ticky's main call-to-action: a solid near-black pill with white text and a
+/// small white icon badge, like the dark pills in the design.
 ///
 /// Pressing it eases it down slightly. [compact] shrinks it to fit its
-/// content, for use as a floating button.
+/// content.
 class PrimaryActionButton extends StatefulWidget {
   const PrimaryActionButton({
     super.key,
@@ -36,44 +35,35 @@ class _PrimaryActionButtonState extends State<PrimaryActionButton> {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    const ink = AppColors.deepBackground;
-    final radius = BorderRadius.circular(widget.compact ? 18 : 20);
+    final scheme = Theme.of(context).colorScheme;
+    final ink = scheme.inverseSurface;
+    final onInk = scheme.onInverseSurface;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-
-    final badge = const DecoratedBox(
-      decoration: BoxDecoration(color: ink, shape: BoxShape.circle),
-      child: Padding(
-        padding: EdgeInsets.all(6),
-        child: Icon(Icons.add_rounded, size: 18, color: AppColors.white),
-      ),
-    );
+    const radius = BorderRadius.all(Radius.circular(AppRadius.pill));
 
     final label = Text(
       widget.label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: text.labelLarge?.copyWith(
-        color: ink,
-        fontSize: widget.compact ? 15 : 16,
-        fontWeight: FontWeight.w700,
+        color: onInk,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+
+    final badge = DecoratedBox(
+      decoration: BoxDecoration(color: onInk, shape: BoxShape.circle),
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Icon(widget.icon, size: 18, color: ink),
       ),
     );
 
     final content = Row(
       mainAxisSize: widget.compact ? MainAxisSize.min : MainAxisSize.max,
       children: [
-        widget.icon == Icons.add_rounded
-            ? badge
-            : DecoratedBox(
-                decoration: const BoxDecoration(
-                  color: ink,
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Icon(widget.icon, size: 18, color: AppColors.white),
-                ),
-              ),
+        badge,
         const SizedBox(width: AppSpacing.md),
         if (widget.compact)
           label
@@ -82,7 +72,7 @@ class _PrimaryActionButtonState extends State<PrimaryActionButton> {
           Icon(
             Icons.arrow_forward_rounded,
             size: 20,
-            color: ink.withValues(alpha: 0.55),
+            color: onInk.withValues(alpha: 0.6),
           ),
         ],
       ],
@@ -98,21 +88,14 @@ class _PrimaryActionButtonState extends State<PrimaryActionButton> {
         curve: AppMotion.curve,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: _pressed ? const Color(0xFFE4E0F4) : AppColors.white,
+            color: _pressed ? Color.lerp(ink, onInk, 0.14) : ink,
             borderRadius: radius,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.35),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-            ],
           ),
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
               borderRadius: radius,
-              splashColor: ink.withValues(alpha: 0.08),
+              splashColor: onInk.withValues(alpha: 0.12),
               highlightColor: Colors.transparent,
               onHighlightChanged: _setPressed,
               onTap: () {

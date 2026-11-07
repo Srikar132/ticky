@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ticky/core/theme/app_tokens.dart';
+import 'package:ticky/core/widgets/floating_nav_bar.dart';
 import 'package:ticky/features/settings/providers/settings_providers.dart';
+import 'package:ticky/features/settings/widgets/appearance_section.dart';
 import 'package:ticky/features/settings/widgets/categories_section.dart';
 import 'package:ticky/features/settings/widgets/history_section.dart';
 import 'package:ticky/features/settings/widgets/notifications_section.dart';
@@ -12,7 +14,7 @@ import 'package:ticky/features/settings/widgets/ticky_shop_section.dart';
 /// pose, and a read-only look at past days. One scrolling page; sheets do the
 /// editing.
 ///
-/// There is no theme setting: Ticky is dark only.
+/// Appearance (system, light or dark) is the first section.
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -48,12 +50,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
+          AppSpacing.lg + 4,
           0,
-          AppSpacing.lg,
-          AppSpacing.xxl,
+          AppSpacing.lg + 4,
+          FloatingNavBar.reservedHeight + AppSpacing.xl,
         ),
         children: [
+          const AppearanceSection(),
           const NotificationsSection(),
           const RoutinesSection(),
           const CategoriesSection(),
