@@ -20,6 +20,7 @@ class SettingsRepository {
   static const _themeMode = 'themeMode';
   static const _hapticsEnabled = 'hapticsEnabled';
   static const _soundEffectsEnabled = 'soundEffectsEnabled';
+  static const _focusCarryAnsweredDateKey = 'focusCarryAnsweredDateKey';
 
   /// Local date (`yyyy-MM-dd`) of the last completed daily reconcile.
   Future<String?> getLastReconciledDateKey() => _read(_lastReconciledDateKey);
@@ -36,6 +37,14 @@ class SettingsRepository {
 
   Future<void> setNotificationPromptDismissedAt(DateTime at) =>
       _write(_notificationPromptDismissedAt, at.toUtc().toIso8601String());
+
+  /// The day the user last answered "bring yesterday's focus over?" (copied
+  /// it or chose a fresh page), so the question is asked once a day.
+  Future<String?> getFocusCarryAnsweredDateKey() =>
+      _read(_focusCarryAnsweredDateKey);
+
+  Future<void> setFocusCarryAnsweredDateKey(String dateKey) =>
+      _write(_focusCarryAnsweredDateKey, dateKey);
 
   Future<NotificationPrefs> getNotificationPrefs() async {
     final rows = await _db.select(_db.appSettings).get();

@@ -7,6 +7,9 @@ import 'package:ticky/core/theme/ticky_colors.dart';
 import 'package:ticky/core/utils/date_keys.dart';
 import 'package:ticky/core/utils/time_formatting.dart';
 import 'package:ticky/core/widgets/form_card.dart';
+import 'package:ticky/features/focus/models/focus_markdown.dart';
+import 'package:ticky/features/focus/providers/focus_providers.dart';
+import 'package:ticky/features/focus/widgets/focus_block_views.dart';
 import 'package:ticky/features/routine/data/history_repository.dart';
 import 'package:ticky/features/routine/providers/history_providers.dart';
 import 'package:ticky/features/tasks/data/daily_record_repository.dart';
@@ -125,6 +128,7 @@ class _DaySheet extends ConsumerWidget {
     final entries =
         ref.watch(historyDayEntriesProvider(dateKey)).value ??
         const <DailyTaskEntry>[];
+    final note = ref.watch(focusNoteProvider(dateKey)).value ?? '';
     final text = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
@@ -155,6 +159,10 @@ class _DaySheet extends ConsumerWidget {
                       entry: entry,
                       onTap: () => Navigator.of(context).pop(entry.record.id),
                     ),
+                  if (note.trim().isNotEmpty) ...[
+                    const SectionLabel("That day's focus"),
+                    FocusPreviewList(blocks: parseFocusMarkdown(note)),
+                  ],
                 ],
               ),
             ),

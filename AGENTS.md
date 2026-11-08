@@ -89,6 +89,7 @@ The main screens are:
 - Completion progress, current streak and coin balance.
 - Tasks grouped by time, with an "Anytime" group for tasks without a reminder.
 - Interactive TICKY character.
+- **Today's focus** card under the hero: the user's own goals and notes for the day (section 8.7). Dotted-paper look with a strip of tape, deliberately different from the white checklist cards. It stays slim when empty so the checklist remains the main content.
 
 **Add/Edit Task Screen**
 - Task title and description.
@@ -109,7 +110,7 @@ The main screens are:
 - Sound and vibration.
 - Character preferences, including the unlockable item shop (spend coins here).
 - Theme settings.
-- Completion history.
+- Completion history, including what was written in that day's focus (read-only).
 
 Do not add additional screens without a clear requirement.
 
@@ -251,6 +252,7 @@ Follow these decisions unless the user explicitly changes them.
 - **Coins are built in v1:** Reward ledger (rows are revoked, never deleted), never a mutable balance. See section 8.4.
 - **Past days are read-only:** Only today's records can be changed.
 - **No separate stats table:** Stats and streaks are derived by query.
+- **Today's focus is separate from routines:** one markdown notebook per day in `day_notes`. It never touches streaks, coins, the checklist progress or notifications. See section 8.7.
 - **Individual reminders:** Every task can have its own reminder configuration.
 - **Configurable alarms:** Users can enable or disable alarm-style reminders per task.
 - **Interactive mascot:** TICKY is a central application feature, not merely a decorative image.
@@ -343,7 +345,9 @@ Constraints: `UNIQUE(routineTaskId, dateKey)`. Indexes on `(dateKey)` and `(date
 
 **unlocked_items**: `itemKey` (PK), `unlockedAt`. The item catalog (name, price, asset) lives in code, not in the database.
 
-**app_settings**: `key` (PK), `value` (text). Keys include `themeMode`, `notificationsEnabled`, `soundEnabled`, `vibrationEnabled`, `followUpEnabled`, `defaultSnoozeMinutes`, `hapticsEnabled`, `soundEffectsEnabled`, `equippedMascotItem`, `lastReconciledDateKey`, `bestStreak`. Access only through a typed settings wrapper.
+**day_notes**: `dateKey` (PK, local date text), `body` (markdown), `updatedAt` (UTC). A day with nothing written has no row (a blank save deletes it). Details in section 8.7.
+
+**app_settings**: `key` (PK), `value` (text). Keys include `themeMode`, `notificationsEnabled`, `soundEnabled`, `vibrationEnabled`, `followUpEnabled`, `defaultSnoozeMinutes`, `hapticsEnabled`, `soundEffectsEnabled`, `equippedMascotItem`, `lastReconciledDateKey`, `bestStreak`, `focusCarryAnsweredDateKey`. Access only through a typed settings wrapper.
 
 ## 8.3 Derived data (never stored in its own table)
 
@@ -380,7 +384,18 @@ Constraints: `UNIQUE(routineTaskId, dateKey)`. Indexes on `(dateKey)` and `(date
 
 ## 8.6 Migrations
 
-Use Drift migrations for every schema change. Dump the schema for each version (`dart run drift_dev schema dump`) and cover migrations with generated tests. Never casually delete or recreate the database. Current schema version: 1.
+Use Drift migrations for every schema change. Dump the schema for each version (`dart run drift_dev schema dump`) and cover migrations with generated tests. Never casually delete or recreate the database. Current schema version: 2 (v2 added `day_notes`). Migrations are `stepByStep` from the generated `lib/core/database/schema_versions.dart`; after a bump run `dart run drift_dev schema dump`, `schema steps` and `schema generate` (tests use `test/generated_migrations/`), and extend `test/core/database/migration_test.dart`.
+
+## 8.7 Today's focus (`lib/features/focus`)
+
+The user's own plan for the day: goals they tick, bullets, headings and plain notes, written in place.
+
+- **Storage:** one markdown string per day in `day_notes`. One block per line: `# heading`, `- bullet`, `- [ ] goal` / `- [x] goal`, anything else is text. A line that would be misread as markup is saved with a leading backslash. Parsing never throws.
+- **Pure core, no Flutter** (`models/`): `focus_markdown.dart` (parse and serialize) and `focus_editing.dart` (every edit as a pure function: split on Enter, join on Backspace, typing shortcuts `[] ` `- ` `# `, toggle, move, delete, carry over). Round-trip and random-operation tests in `test/features/focus` must keep passing. Add a test there for any new rule.
+- **Editor widget:** each line is a normal `TextField` (`FocusBlockField`), so Flutter owns the cursor, selection and IME. Every field keeps an invisible marker (`focusMarker`, U+200B) in front of its text because phone keyboards send no key event for Backspace in an empty field. The marker must never reach the blocks or the saved markdown. The widget only forwards what the user did; the rules live in `focus_editing.dart`.
+- **State:** `focusDocProvider(dateKey)` holds the page while on screen. The Home card and the editor sheet watch the same instance. Saves are debounced (500 ms), flushed when the sheet closes, when the app leaves the foreground, and on dispose. There is an undo stack (typing is grouped).
+- **Write rules:** only today is writable, plus yesterday for 2 hours after midnight so a late save is not lost. Past days are read-only and shown in History. Goals do not earn coins and do not count toward streaks.
+- **Bring yesterday over:** when today's page is empty and an earlier page exists (last 7 days), the card and sheet ask once per day: bring unfinished goals, copy all, or start fresh. Nothing is copied automatically. The answer is stored in `focusCarryAnsweredDateKey`.
 
 ---
 
