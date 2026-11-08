@@ -3063,6 +3063,276 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   }
 }
 
+class $DayNotesTable extends DayNotes with TableInfo<$DayNotesTable, DayNote> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DayNotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dateKeyMeta = const VerificationMeta(
+    'dateKey',
+  );
+  @override
+  late final GeneratedColumn<String> dateKey = GeneratedColumn<String>(
+    'date_key',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 10,
+      maxTextLength: 10,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [dateKey, body, updatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'day_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DayNote> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('date_key')) {
+      context.handle(
+        _dateKeyMeta,
+        dateKey.isAcceptableOrUnknown(data['date_key']!, _dateKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dateKeyMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {dateKey};
+  @override
+  DayNote map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DayNote(
+      dateKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}date_key'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DayNotesTable createAlias(String alias) {
+    return $DayNotesTable(attachedDatabase, alias);
+  }
+}
+
+class DayNote extends DataClass implements Insertable<DayNote> {
+  /// Local calendar date, `yyyy-MM-dd`. Never a DateTime.
+  final String dateKey;
+
+  /// Markdown, one block per line. A day with nothing written has no row.
+  final String body;
+
+  /// UTC instant of the last save.
+  final DateTime updatedAt;
+  const DayNote({
+    required this.dateKey,
+    required this.body,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['date_key'] = Variable<String>(dateKey);
+    map['body'] = Variable<String>(body);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  DayNotesCompanion toCompanion(bool nullToAbsent) {
+    return DayNotesCompanion(
+      dateKey: Value(dateKey),
+      body: Value(body),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory DayNote.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DayNote(
+      dateKey: serializer.fromJson<String>(json['dateKey']),
+      body: serializer.fromJson<String>(json['body']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'dateKey': serializer.toJson<String>(dateKey),
+      'body': serializer.toJson<String>(body),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  DayNote copyWith({String? dateKey, String? body, DateTime? updatedAt}) =>
+      DayNote(
+        dateKey: dateKey ?? this.dateKey,
+        body: body ?? this.body,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  DayNote copyWithCompanion(DayNotesCompanion data) {
+    return DayNote(
+      dateKey: data.dateKey.present ? data.dateKey.value : this.dateKey,
+      body: data.body.present ? data.body.value : this.body,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayNote(')
+          ..write('dateKey: $dateKey, ')
+          ..write('body: $body, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(dateKey, body, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DayNote &&
+          other.dateKey == this.dateKey &&
+          other.body == this.body &&
+          other.updatedAt == this.updatedAt);
+}
+
+class DayNotesCompanion extends UpdateCompanion<DayNote> {
+  final Value<String> dateKey;
+  final Value<String> body;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const DayNotesCompanion({
+    this.dateKey = const Value.absent(),
+    this.body = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DayNotesCompanion.insert({
+    required String dateKey,
+    required String body,
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : dateKey = Value(dateKey),
+       body = Value(body);
+  static Insertable<DayNote> custom({
+    Expression<String>? dateKey,
+    Expression<String>? body,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (dateKey != null) 'date_key': dateKey,
+      if (body != null) 'body': body,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DayNotesCompanion copyWith({
+    Value<String>? dateKey,
+    Value<String>? body,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return DayNotesCompanion(
+      dateKey: dateKey ?? this.dateKey,
+      body: body ?? this.body,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (dateKey.present) {
+      map['date_key'] = Variable<String>(dateKey.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DayNotesCompanion(')
+          ..write('dateKey: $dateKey, ')
+          ..write('body: $body, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3074,6 +3344,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RewardEventsTable rewardEvents = $RewardEventsTable(this);
   late final $UnlockedItemsTable unlockedItems = $UnlockedItemsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $DayNotesTable dayNotes = $DayNotesTable(this);
   late final Index dailyTaskRecordsDate = Index(
     'daily_task_records_date',
     'CREATE INDEX daily_task_records_date ON daily_task_records (date_key)',
@@ -3093,6 +3364,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     rewardEvents,
     unlockedItems,
     appSettings,
+    dayNotes,
     dailyTaskRecordsDate,
     dailyTaskRecordsDateStatus,
   ];
@@ -5277,6 +5549,171 @@ typedef $$AppSettingsTableProcessedTableManager =
       AppSetting,
       PrefetchHooks Function()
     >;
+typedef $$DayNotesTableCreateCompanionBuilder =
+    DayNotesCompanion Function({
+      required String dateKey,
+      required String body,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+typedef $$DayNotesTableUpdateCompanionBuilder =
+    DayNotesCompanion Function({
+      Value<String> dateKey,
+      Value<String> body,
+      Value<DateTime> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$DayNotesTableFilterComposer
+    extends Composer<_$AppDatabase, $DayNotesTable> {
+  $$DayNotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get dateKey => $composableBuilder(
+    column: $table.dateKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DayNotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $DayNotesTable> {
+  $$DayNotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get dateKey => $composableBuilder(
+    column: $table.dateKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DayNotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DayNotesTable> {
+  $$DayNotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get dateKey =>
+      $composableBuilder(column: $table.dateKey, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$DayNotesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DayNotesTable,
+          DayNote,
+          $$DayNotesTableFilterComposer,
+          $$DayNotesTableOrderingComposer,
+          $$DayNotesTableAnnotationComposer,
+          $$DayNotesTableCreateCompanionBuilder,
+          $$DayNotesTableUpdateCompanionBuilder,
+          (DayNote, BaseReferences<_$AppDatabase, $DayNotesTable, DayNote>),
+          DayNote,
+          PrefetchHooks Function()
+        > {
+  $$DayNotesTableTableManager(_$AppDatabase db, $DayNotesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DayNotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DayNotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DayNotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> dateKey = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayNotesCompanion(
+                dateKey: dateKey,
+                body: body,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String dateKey,
+                required String body,
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DayNotesCompanion.insert(
+                dateKey: dateKey,
+                body: body,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DayNotesTable, DayNote>(table),
+                  BaseReferences<_$AppDatabase, $DayNotesTable, DayNote>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DayNotesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DayNotesTable,
+      DayNote,
+      $$DayNotesTableFilterComposer,
+      $$DayNotesTableOrderingComposer,
+      $$DayNotesTableAnnotationComposer,
+      $$DayNotesTableCreateCompanionBuilder,
+      $$DayNotesTableUpdateCompanionBuilder,
+      (DayNote, BaseReferences<_$AppDatabase, $DayNotesTable, DayNote>),
+      DayNote,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5293,4 +5730,6 @@ class $AppDatabaseManager {
       $$UnlockedItemsTableTableManager(_db, _db.unlockedItems);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$DayNotesTableTableManager get dayNotes =>
+      $$DayNotesTableTableManager(_db, _db.dayNotes);
 }

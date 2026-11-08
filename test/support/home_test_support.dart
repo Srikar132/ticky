@@ -13,6 +13,8 @@ import 'package:ticky/core/utils/date_keys.dart';
 import 'package:ticky/features/categories/data/category_repository.dart';
 import 'package:ticky/features/categories/models/category_draft.dart';
 import 'package:ticky/features/categories/providers/category_providers.dart';
+import 'package:ticky/features/focus/data/focus_repository.dart';
+import 'package:ticky/features/focus/providers/focus_providers.dart';
 import 'package:ticky/features/home/providers/home_providers.dart';
 import 'package:ticky/features/home/providers/notification_prompt_controller.dart';
 import 'package:ticky/features/rewards/models/shop_item.dart';
@@ -314,6 +316,14 @@ class FakeNotificationService implements NotificationService {
 /// Stands in for the settings table: remembers the "maybe later" time.
 class FakeSettings implements SettingsRepository {
   DateTime? dismissedAt;
+  String? focusCarryAnswered;
+
+  @override
+  Future<String?> getFocusCarryAnsweredDateKey() async => focusCarryAnswered;
+
+  @override
+  Future<void> setFocusCarryAnsweredDateKey(String dateKey) async =>
+      focusCarryAnswered = dateKey;
 
   @override
   Future<DateTime?> getNotificationPromptDismissedAt() async => dismissedAt;
@@ -321,6 +331,50 @@ class FakeSettings implements SettingsRepository {
   @override
   Future<void> setNotificationPromptDismissedAt(DateTime at) async =>
       dismissedAt = at;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName} is not faked');
+}
+
+/// Today's focus notebook kept in a map instead of a database. Like the real
+/// one, a blank body removes the day.
+class FakeFocusRepository implements FocusRepository {
+  FakeFocusRepository([Map<String, String> notes = const {}])
+    : notes = {...notes};
+
+  final Map<String, String> notes;
+  final saves = <(String, String)>[];
+
+  @override
+  Future<String> getBody(String dateKey) async => notes[dateKey] ?? '';
+
+  @override
+  Stream<String> watchBody(String dateKey) =>
+      Stream.value(notes[dateKey] ?? '');
+
+  @override
+  Future<DayNote?> latestBefore(String dateKey) async {
+    final earlier = notes.keys.where((k) => k.compareTo(dateKey) < 0).toList()
+      ..sort();
+    if (earlier.isEmpty) return null;
+    final key = earlier.last;
+    return DayNote(
+      dateKey: key,
+      body: notes[key]!,
+      updatedAt: DateTime.utc(2026),
+    );
+  }
+
+  @override
+  Future<void> save(String dateKey, String body) async {
+    saves.add((dateKey, body));
+    if (body.trim().isEmpty) {
+      notes.remove(dateKey);
+    } else {
+      notes[dateKey] = body;
+    }
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) =>
@@ -382,10 +436,13 @@ List<Override> homeOverrides({
   ThemeMode themeMode = ThemeMode.light,
   FakeThemeModeController? themeController,
   FeedbackPrefs feedbackPrefs = const FeedbackPrefs(),
+  FakeFocusRepository? focus,
 }) {
   final time = now ?? DateTime(2026, 11, 2, 9);
   final fakeRoutines = routines ?? FakeRoutineRepository();
   return [
+    focusRepositoryProvider.overrideWithValue(focus ?? FakeFocusRepository()),
+    focusSaveDelayProvider.overrideWithValue(Duration.zero),
     themeModeProvider.overrideWith(
       () => themeController ?? FakeThemeModeController(themeMode),
     ),

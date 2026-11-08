@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ticky/features/focus/widgets/focus_marks.dart';
 import 'package:ticky/app_router.dart';
 import 'package:ticky/core/database/data_exceptions.dart';
 import 'package:ticky/core/database/enums.dart';
@@ -794,6 +795,33 @@ void main() {
       await tester.tap(find.text('Stretch'));
       await tester.pumpAndSettle();
       expect(find.byType(TaskDetailsScreen), findsOneWidget);
+    });
+
+    testWidgets("a day also shows what was written in that day's focus", (
+      tester,
+    ) async {
+      await openSettings(
+        tester,
+        homeOverrides(
+          historyDays: [day('2026-11-01', completed: 1)],
+          historyEntries: {
+            '2026-11-01': [entry(id: 7, title: 'Stretch', minutes: 450)],
+          },
+          focus: FakeFocusRepository({
+            '2026-11-01': '# Spring\n- [x] revise beans\n- [ ] security',
+          }),
+        ),
+      );
+
+      await tester.tap(find.text('Sun 1 Nov'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("That day's focus"), findsOneWidget);
+      expect(find.text('Spring'), findsOneWidget);
+      expect(find.text('revise beans'), findsOneWidget);
+      expect(find.text('security'), findsOneWidget);
+      // Read-only: no tickable goals.
+      expect(find.byType(FocusCheck), findsNothing);
     });
   });
 

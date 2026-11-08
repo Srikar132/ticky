@@ -16,6 +16,7 @@ import 'package:ticky/features/categories/providers/category_providers.dart';
 import 'package:ticky/features/celebration/widgets/all_done_sheet.dart';
 import 'package:ticky/features/celebration/widgets/confetti.dart';
 import 'package:ticky/features/character/models/mascot_mood.dart';
+import 'package:ticky/features/focus/widgets/focus_card.dart';
 import 'package:ticky/features/home/models/daily_progress.dart';
 import 'package:ticky/features/home/models/home_headline.dart';
 import 'package:ticky/features/home/models/task_group.dart';
@@ -299,6 +300,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onMascotTap: () => _react(MascotMood.surprised),
                 ),
               ),
+            ),
+            const SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.lg + 4,
+                AppSpacing.md,
+                AppSpacing.lg + 4,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(child: FocusCard()),
             ),
             if (loading)
               const SliverFillRemaining(
