@@ -21,17 +21,30 @@ TextStyle focusTextStyle(BuildContext context, FocusBlock block) {
 /// One line of the notebook shown as plain text: on the Home card (where a goal
 /// can be ticked) and in history (where nothing can be changed).
 class FocusPreviewRow extends StatelessWidget {
-  const FocusPreviewRow({super.key, required this.block, this.onToggle});
+  const FocusPreviewRow({
+    super.key,
+    required this.block,
+    this.onToggle,
+    this.maxLines = 2,
+    this.dense = false,
+  });
 
   final FocusBlock block;
 
   /// Ticks or unticks a to-do. Null makes the row read-only.
   final VoidCallback? onToggle;
 
+  /// Lines of text shown before it is cut with an ellipsis. Null shows it all.
+  final int? maxLines;
+
+  /// Tight rows that read like a description, not like a list of tap targets.
+  final bool dense;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final style = focusTextStyle(context, block);
+    final lead = dense ? 24.0 : 38.0;
     final Widget leading;
     if (block.isTodo) {
       leading = onToggle != null
@@ -42,13 +55,13 @@ class FocusPreviewRow extends StatelessWidget {
               extent: 38,
             )
           : SizedBox(
-              width: 38,
-              height: 32,
+              width: lead,
+              height: dense ? 20 : 32,
               child: Icon(
                 block.checked
                     ? Icons.check_circle_rounded
                     : Icons.circle_outlined,
-                size: 22,
+                size: dense ? 18 : 22,
                 color: block.checked
                     ? scheme.onSurface
                     : scheme.onSurface.withValues(alpha: 0.4),
@@ -57,8 +70,8 @@ class FocusPreviewRow extends StatelessWidget {
             );
     } else if (block.type == FocusBlockType.bullet) {
       leading = SizedBox(
-        width: 38,
-        height: 28,
+        width: lead,
+        height: dense ? 20 : 28,
         child: Center(
           child: Container(
             width: 5,
@@ -80,12 +93,14 @@ class FocusPreviewRow extends StatelessWidget {
         leading,
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 3),
+            padding: EdgeInsets.symmetric(vertical: dense ? 1 : 3),
             child: Text(
               block.text,
               style: style,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              maxLines: maxLines,
+              overflow: maxLines == null
+                  ? TextOverflow.clip
+                  : TextOverflow.ellipsis,
             ),
           ),
         ),
@@ -100,11 +115,19 @@ class FocusPreviewList extends StatelessWidget {
     super.key,
     required this.blocks,
     this.maxRows,
+    this.rowMaxLines = 2,
+    this.dense = false,
     this.onToggle,
   });
 
   final List<FocusBlock> blocks;
   final int? maxRows;
+
+  /// Passed to each row. Tight spacing for description-style text.
+  final bool dense;
+
+  /// Passed to each row. Null shows every line in full.
+  final int? rowMaxLines;
   final void Function(FocusBlock block)? onToggle;
 
   @override
@@ -120,6 +143,8 @@ class FocusPreviewList extends StatelessWidget {
           FocusPreviewRow(
             key: ValueKey('preview-${block.id}'),
             block: block,
+            maxLines: rowMaxLines,
+            dense: dense,
             onToggle: block.isTodo && onToggle != null
                 ? () => onToggle!(block)
                 : null,

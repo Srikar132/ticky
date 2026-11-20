@@ -15,12 +15,15 @@ import 'package:ticky/core/utils/time_formatting.dart';
 import 'package:ticky/core/widgets/confirm_sheet.dart';
 import 'package:ticky/features/categories/models/category_options.dart';
 import 'package:ticky/features/categories/providers/category_providers.dart';
+import 'package:ticky/features/focus/models/focus_markdown.dart';
+import 'package:ticky/features/focus/widgets/focus_block_views.dart';
 import 'package:ticky/features/home/providers/home_providers.dart';
 import 'package:ticky/features/rewards/data/reward_config.dart';
 import 'package:ticky/features/tasks/models/repeat_days.dart';
 import 'package:ticky/features/tasks/models/task_details.dart';
 import 'package:ticky/features/tasks/providers/routine_actions.dart';
 import 'package:ticky/features/tasks/providers/task_details_providers.dart';
+import 'package:ticky/features/tasks/widgets/collapsible_notes.dart';
 import 'package:ticky/features/tasks/widgets/property_row.dart';
 
 /// One daily record ([recordId]) with its routine's settings.
@@ -344,9 +347,15 @@ class _Header extends StatelessWidget {
             ),
             if (description != null && description.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
-              Text(
-                description,
-                style: text.bodyLarge?.copyWith(color: scheme.onSurface),
+              // Notes use the same markdown as Today's focus: headings,
+              // bullets and goals. Read-only here.
+              CollapsibleNotes(
+                background: tint,
+                child: FocusPreviewList(
+                  blocks: parseFocusMarkdown(description),
+                  rowMaxLines: null,
+                  dense: true,
+                ),
               ),
             ],
           ],
