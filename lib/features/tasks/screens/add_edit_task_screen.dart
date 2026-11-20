@@ -319,11 +319,11 @@ class _TaskFormState extends ConsumerState<_TaskForm> {
                     controller: _description,
                     textCapitalization: TextCapitalization.sentences,
                     minLines: 1,
-                    maxLines: 4,
+                    maxLines: 6,
                     style: text.bodyLarge,
                     decoration: bareInputDecoration(
                       context,
-                      hint: 'Add notes',
+                      hint: 'Add notes (# heading, - bullet, - [ ] goal)',
                       hintStyle: text.bodyLarge?.copyWith(
                         color: scheme.onSurfaceVariant.withValues(alpha: 0.6),
                       ),

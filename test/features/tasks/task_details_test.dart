@@ -12,6 +12,7 @@ import 'package:ticky/features/tasks/data/daily_record_repository.dart';
 import 'package:ticky/features/tasks/models/task_details.dart';
 import 'package:ticky/features/tasks/screens/add_edit_task_screen.dart';
 import 'package:ticky/features/tasks/screens/task_details_screen.dart';
+import 'package:ticky/features/tasks/widgets/collapsible_notes.dart';
 
 import '../../support/home_test_support.dart';
 
@@ -207,6 +208,75 @@ void main() {
       expect(find.text('5 min'), findsOneWidget);
       expect(find.text('15 min'), findsOneWidget);
       expect(find.text('Hydrate!'), findsOneWidget);
+    });
+
+    testWidgets('notes render as markdown, in full, without the markup', (
+      tester,
+    ) async {
+      final long = 'word ' * 60;
+      await openDetails(
+        tester,
+        entries: [pending()],
+        routines: [
+          _routine(
+            id: 1,
+            description:
+                '# Plan\n- first\n- [x] done goal\n- [ ] open goal\n$long',
+          ),
+        ],
+      );
+
+      expect(find.text('Plan'), findsOneWidget);
+      expect(find.text('first'), findsOneWidget);
+      expect(find.text('done goal'), findsOneWidget);
+      expect(find.text('open goal'), findsOneWidget);
+      expect(find.textContaining('# Plan'), findsNothing);
+      expect(find.textContaining('- first'), findsNothing);
+      expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.circle_outlined), findsOneWidget);
+
+      final text = tester.widget<Text>(find.text(long));
+      expect(text.maxLines, isNull, reason: 'long notes are not cut');
+    });
+
+    testWidgets('short notes have no See more button', (tester) async {
+      await openDetails(
+        tester,
+        entries: [pending()],
+        routines: [_routine(id: 1, description: '- one\n- two')],
+      );
+
+      expect(find.text('See more'), findsNothing);
+      expect(find.text('See less'), findsNothing);
+    });
+
+    testWidgets('long notes are cut, and See more opens them up', (
+      tester,
+    ) async {
+      final lines = List.generate(20, (i) => '- item $i').join('\n');
+      await openDetails(
+        tester,
+        entries: [pending()],
+        routines: [_routine(id: 1, description: lines)],
+      );
+
+      double notesHeight() =>
+          tester.getSize(find.byType(CollapsibleNotes)).height;
+
+      expect(find.text('See more'), findsOneWidget);
+      final collapsed = notesHeight();
+
+      await tester.tap(find.text('See more'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('See less'), findsOneWidget);
+      expect(notesHeight(), greaterThan(collapsed));
+
+      await tester.tap(find.text('See less'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('See more'), findsOneWidget);
+      expect(notesHeight(), collapsed);
     });
 
     testWidgets('settings that are not used are not shown', (tester) async {
